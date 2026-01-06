@@ -1,9 +1,6 @@
-<!-- Plana amb les dades personals de l'usuari que obra sessió, totes les variables PHP s'escriuen entre aquests signes:<?= $variable ?> -->
 <?php
-// Aquí guardem totes les variables que ens arriben de la sessió
 session_start();
 
-// Comprovem si l'usuari ha iniciat sessió
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     $_SESSION['errorNumber'] = 9;
     $_SESSION['errorMsg'] = "Has d'iniciar sessió per accedir a aquesta pàgina.";
@@ -261,7 +258,7 @@ $publicacions = $_SESSION["publicacions"];
     </div>
   </div>
 
-  <!-- Modal Esborrar Perfil, avís necessari per avisar que s'eliminarà permanentment el perfil -->
+  <!-- Modal Esborrar Perfil -->
   <div class="modal fade" id="deleteProfileModal" tabindex="-1" aria-labelledby="deleteProfileModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
