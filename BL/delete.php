@@ -1,4 +1,3 @@
-<!-- Codi per esborrar permanentment un usuari de la base de dades quan li dona al botó d'eliminar -->
 <?php
 
 session_start();
@@ -7,6 +6,11 @@ require_once('Usuari.php');
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'delete') {
     
+    if (!isset($_SESSION['user_email'])) {
+        header("Location: ../index.html");
+        exit;
+    }
+
     $email = $_SESSION['user_email'];
     $usuari = new Usuari();
 

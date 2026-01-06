@@ -1,7 +1,3 @@
-<!-- Codi per fer l'actualització del perfil, 
- rep les dades de la capa de presentació, 
- utilitza les funcions per sanejar i validar-les
- i si és correcte, actualitza les dades a la BD i a la sessió -->
 <?php
 
 session_start();
@@ -17,16 +13,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $email = $_SESSION['user_email'];
-    $nom = sanitizeString($_POST['nom'] ?? ''); // El ?? vol dir que si no hi ha cap valor, posi un string buit perquè pugui continuar el codi
+    $nom = sanitizeString($_POST['nom'] ?? '');
     $alies = sanitizeString($_POST['alies'] ?? '');
     $descripcio = sanitizeString($_POST['descripcio'] ?? '');
     $contrasenya = $_POST['contrasenya'] ?? '';
     $errors = [];
     
     if (empty($errors)) {
-        $validationErrors = validateUserFields($nom, $alies, $email, $contrasenya, true); // Aquí passem totes les dades actualitzades menys la contrasenya
+        $validationErrors = validateUserFields($nom, $alies, $email, $contrasenya, true);
         $errors = array_merge($errors, $validationErrors);
-    } else {
+    }
+
+    if (!empty($errors)) {
         $_SESSION['errorNumber'] = 1;
         $_SESSION['errorMsg'] = $errors;
         header("Location: ../error.php");
@@ -44,7 +42,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $url_imatge = $imageResult['url'];
 
-    // Si no ha deixat en blanc la zona de la nova contrasenya, comprovem que sigui vàlida i la canviem
     if (!empty($contrasenya)) {
         if (!validatePassword($contrasenya)) {
             $_SESSION["errorNumber"] = 1;

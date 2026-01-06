@@ -1,6 +1,4 @@
-<!-- Visualitzador de publicacions d'un usuari 
- Es poden buscar usuari per la barra de cerca amb el mètode GET (és a dir, que la URL queda així: visor.php?alies=...) 
- Funciona igual que el dashboard.php però aquí podem accedir fins i tot sense obrir sessió -->
+<!-- Visualitzador de publicacions d'un usuari -->
 <?php
 session_start();
 
@@ -16,7 +14,7 @@ if (!isset($_GET['alies']) || empty(trim($_GET['alies']))) {
 $aliesBuscat = $_GET['alies'];
 
 $usuari = new Usuari();
-$dadesUsuari = $usuari->getUserById($aliesBuscat); // Obtenir les dades de l'usuari buscat
+$dadesUsuari = $usuari->getUserById($aliesBuscat);
 
 if (!$dadesUsuari) {
     $_SESSION['errorNumber'] = 11;
@@ -66,17 +64,15 @@ $publicacions = $dadesUsuari['publicacions'];
         </form>
         <!-- Menú de navegació -->
         <ul class="navbar-nav align-items-center gap-2">
-          <li class="nav-item">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTextModal">
-              <i class="bi bi-bookmark-plus"></i> Crear Text
-            </button>
-          </li>
           <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
+            <li class="nav-item">
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTextModal">
+                <i class="bi bi-bookmark-plus"></i> Crear Text
+              </button>
+            </li>
             <li class="nav-item">
               <a class="nav-link text-white" href="dashboard.php"><i class="bi bi-person-circle"></i> Perfil</a>
             </li>
-          <?php endif; ?>
-          <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
             <li class="nav-item">
               <a class="btn btn-outline-warning" href="BL/logout.php"><i class="bi bi-box-arrow-right"></i> Tanca sessió</a>
             </li>

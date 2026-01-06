@@ -1,22 +1,25 @@
-<!-- Funcions de sanejament i validació dels continguts, retornen true si el contingut és vàlid, false si no ho és 
- A més, per cada error, guardem un missatge a la sessió que mostrarem a la plana error.php -->
+<!-- Funcions de sanejament i validació dels continguts -->
 <?php
 
+require_once('vendor/autoload.php');
+
+use Egulias\EmailValidator\EmailValidator;
+use Egulias\EmailValidator\Validation\DNSCheckValidation;
+use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
+use Egulias\EmailValidator\Validation\NoRFCWarningsValidation;
+use Egulias\EmailValidator\Validation\Extra\SpoofCheckValidation;
+
 // Funcions de sanejament
-// htmlspecialchars() converteix els caràcters especials en codi HTML
-// trim() elimina els espais en blanc al principi i al final
-// ENT_QUOTES converteix les cometes simples i les cometes dobles
-// UTF-8 perquè pugui acceptar caràcters unicode
 
 function sanitizeString($value) {
     return htmlspecialchars(trim((string) $value), ENT_QUOTES, 'UTF-8');
 }
 
 function sanitizeEmail($email) {
-    return trim((string) $email, FILTER_SANITIZE_EMAIL); // Especial per email, filtra el email per eliminar caràcters no vàlids
+    return trim((string) $email, FILTER_SANITIZE_EMAIL);
 }
 
-// Funcions de validació (les limitacions estan en la documentació)
+// Funcions de validació
 
 function validateName($name)
 {
@@ -30,7 +33,15 @@ function validateAlias($alias) {
 
 function validateEmailAddress($email)
 {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    $validator = new EmailValidator();
+
+    $multipleValidations = new MultipleValidationWithAnd([
+        new NoRFCWarningsValidation(),
+        new DNSCheckValidation(),
+        new SpoofCheckValidation()
+    ]);
+
+    return $validator->isValid($email, $multipleValidations);
 }
 
 function validatePassword($password)
@@ -41,10 +52,6 @@ function validatePassword($password)
     $hasSpecialChars = preg_match('/[^A-Za-z0-9]/', $password);
     return $length >= 8 && $hasLetters && $hasDigits && $hasSpecialChars;
 }
-
-// Aquesta funció junta totes les anteriors, així fem una sola crida quan volguem fer una validació del perfil
-// La variable $isUpdate serveix per indicar que si es fa una actualitzacio, no comprovi la contrasenya 
-// (ja que hem separat l'actualització en dos: dades del perfil i contrasenya)
 
 function validateUserFields($nom, $alies, $email, $contrasenya = null, $isUpdate = false)
 {
@@ -70,8 +77,6 @@ function validateUserFields($nom, $alies, $email, $contrasenya = null, $isUpdate
     return $errors;
 }
 
-// La funció per validar imatges no l'acabo d'entendre ni jo, és un mètode estàndard de PHP
-// Només sé que pujes una imatge i si té un format vàlid i pesa menys de 2MB, la guardes en la carpeta "images"
 function validateImage(?array $file, string $currentImageUrl, string $uploadDir = '../images/'): array {
     if (!$file || !isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => true, 'url' => $currentImageUrl];

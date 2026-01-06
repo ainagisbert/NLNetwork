@@ -1,7 +1,3 @@
-<!-- Codi per fer el registre d'usuaris, 
- rep les dades de la capa de presentació (del formulari de registre), 
- utilitza les funcions per sanejar i validar les dades
- i si són correctes, registra l'usuari a la BD -->
 <?php
 
 session_start();
@@ -9,7 +5,6 @@ session_start();
 require_once('Usuari.php');
 require_once('../helpers/validation.php');
 
-// Funció per enviar l'email de benvinguda, el correu ens el dona AlwaysData, no l'he creat jo
 function sendWelcomeEmail($email, $nom, $alies) {
     $to = $email;
     $subject = "Benvingut/da a NLNetwork!";
@@ -30,7 +25,6 @@ function sendWelcomeEmail($email, $nom, $alies) {
     return mail($to, $subject, $message, $headers, "-f nlnetwork@alwaysdata.net");
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nom = sanitizeString($_POST['nom'] ?? '');
     $alies = sanitizeString($_POST['alies'] ?? '');
@@ -41,7 +35,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         $validationErrors = validateUserFields($nom, $alies, $email, $contrasenya);
         $errors = array_merge($errors, $validationErrors);
-    } else {
+    }
+
+    if (!empty($errors)) {
         $_SESSION['errorNumber'] = 1;
         $_SESSION['errorMsg'] = $errors;
         header("Location: ../error.php");

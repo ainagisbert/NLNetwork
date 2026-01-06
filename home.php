@@ -36,17 +36,15 @@ session_start();
         </form>
         <!-- Menú de navegació -->
         <ul class="navbar-nav align-items-center gap-2">
-          <li class="nav-item">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTextModal">
-              <i class="bi bi-bookmark-plus"></i> Crear Text
-            </button>
-          </li>
           <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
+            <li class="nav-item">
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTextModal">
+                <i class="bi bi-bookmark-plus"></i> Crear Text
+              </button>
+            </li>
             <li class="nav-item">
               <a class="nav-link text-white" href="dashboard.php"><i class="bi bi-person-circle"></i> Perfil</a>
             </li>
-          <?php endif; ?>
-          <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
             <li class="nav-item">
               <a class="btn btn-outline-warning" href="BL/logout.php"><i class="bi bi-box-arrow-right"></i> Tanca sessió</a>
             </li>

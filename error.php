@@ -1,6 +1,5 @@
 <!-- Plana per a la gestió dels errors via variables de SESSIÓ que inclouen un número i una descripció -->
 <?php
-// Aquí rebem el missatge i número d'error i el guardem, si no hi ha cap error, el número és 0
 session_start();
 
 $errorNumber = null;

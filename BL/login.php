@@ -1,6 +1,3 @@
-<!-- Codi per fer inici de sessió, 
- rep les dades de la capa de presentació, 
- i si són correctes (existeixen i coincideixen amb la BD), les guarda a la sessió -->
 <?php
 
 session_start();
@@ -12,7 +9,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $identificador = sanitizeString($_POST['identificador'] ?? '');
     $contrasenya = $_POST['contrasenya'] ?? '';
 
-    // Utilitzem la classe Usuari per comprovar si l'usuari existeix i si la contrasenya és correcta
     $usuari = new Usuari();
 
     if (!$usuari->existsEmail($identificador) && !$usuari->existsAlias($identificador)) {
@@ -29,7 +25,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    // Array amb totes les dades de l'usuari que inicia sessió
     $userData = $usuari->getUserById($identificador);
     
     if ($userData) {
