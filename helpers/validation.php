@@ -128,4 +128,57 @@ function validateImage(?array $file, string $currentImageUrl, string $uploadDir 
     }
 }
 
+function validateImageForPost(?array $file, string $uploadDir = '../images/') {
+    // Si no s'ha pujat cap imatge, retornem null
+    if (!$file || !isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => true, 'url' => null];
+    }
+
+    // Validació normal
+    $fileTmpPath = $file['tmp_name'];
+    $fileName = $file['name'];
+    $fileSize = $file['size'];
+    $fileType = $file['type'];
+
+    $fileNameCmps = explode(".", $fileName);
+    $fileExtension = strtolower(end($fileNameCmps));
+
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+    if (!in_array($fileExtension, $allowedExtensions)) {
+        return [
+            'success' => false,
+            'url' => null,
+            'error' => 'Tipus d\'arxiu no permès. Només es permeten: JPG, JPEG, PNG, GIF.'
+        ];
+    }
+
+    $maxFileSize = 2 * 1024 * 1024; // 2MB
+    if ($fileSize > $maxFileSize) {
+        return [
+            'success' => false,
+            'url' => null,
+            'error' => 'La imatge és massa gran. La mida màxima és 2 MB.'
+        ];
+    }
+
+    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+    $destPath = $uploadDir . $newFileName;
+
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    if (move_uploaded_file($fileTmpPath, $destPath)) {
+        $url = 'images/' . $newFileName;
+        return ['success' => true, 'url' => $url];
+    } else {
+        return [
+            'success' => false,
+            'url' => null,
+            'error' => 'Error en pujar la imatge al servidor.'
+        ];
+    }
+}
+
 ?>

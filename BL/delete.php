@@ -1,20 +1,18 @@
 <?php
-
 session_start();
 
 require_once('Usuari.php');
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'delete') {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'deleteUser') {
     
-    if (!isset($_SESSION['user_email'])) {
+    if (!isset($_SESSION["id_usuari"])) {
         header("Location: ../index.html");
         exit;
     }
 
-    $email = $_SESSION['user_email'];
-    $usuari = new Usuari();
+    $usuari = new Usuari($_SESSION["id_usuari"]);
 
-    if ($usuari->deleteUser($email)) {
+    if ($usuari->deleteUser()) {
         session_unset();
         session_destroy();
         header("Location: ../index.html");

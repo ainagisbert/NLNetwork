@@ -1,19 +1,27 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || !isset($_SESSION['id_usuari'])) {
     $_SESSION['errorNumber'] = 9;
     $_SESSION['errorMsg'] = "Has d'iniciar sessió per accedir a aquesta pàgina.";
     header("Location: error.php");
     exit;
 }
 
-$avatar = $_SESSION['avatar'] ?? 'images/profile_placeholder.jpg';
-$alies = htmlspecialchars($_SESSION['user_alies'] ?? '', ENT_QUOTES, 'UTF-8');
-$nom = htmlspecialchars($_SESSION['user_nom'] ?? '', ENT_QUOTES, 'UTF-8');
-$descripcio = htmlspecialchars($_SESSION['user_descripcio'] ?? '', ENT_QUOTES, 'UTF-8');
-$likes = $_SESSION["likes_rebuts"];
-$publicacions = $_SESSION["publicacions"];
+require_once('BL/Usuari.php');
+require_once('helpers/display.php');
+
+$usuari = new Usuari($_SESSION["id_usuari"]);
+
+$usuari->loadPosts();
+$posts = $usuari->getPosts();
+
+$avatar = $usuari->getAvatar();
+$alies = $usuari->getAlies();
+$nom = $usuari->getNom();
+$descripcio = $usuari->getDescripcio();
+$likes = $usuari->getLikes();
+$publicacions = count($posts);
 
 ?>
 
@@ -24,7 +32,7 @@ $publicacions = $_SESSION["publicacions"];
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perfil</title>
   <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css  " rel="stylesheet">
   <!-- CSS personalitzat -->
   <link rel="stylesheet" href="./scss/reducido.css">
 </head>
@@ -93,61 +101,75 @@ $publicacions = $_SESSION["publicacions"];
   <div class="container mt-4">
     <div class="row">
       <!-- Columna del perfil -->
-    <div class="col-12 col-lg-3 mb-4">
-    <div class="card bg-dark text-white shadow-sm">
-        <div class="text-center pt-3">
-        <img src="<?= $avatar ?>" class="rounded-circle mx-auto big-avatar" alt="avatar">
-        <h5 class="mt-2 text-warning fw-bold">@<?= $alies ?></h5>
-        <p class="mb-1"><?= $nom ?></p>
-        <p class="px-3 mb-0 text-info small">
-            <?= $descripcio ?>
-        </p>
-        </div>
-        <div class="card-body pt-0">
-        <div class="d-flex justify-content-around mt-3 border-top pt-3">
-            <div class="text-center">
-            <div class="fw-bold"><?= $publicacions ?></div>
-            <small>Publicacions</small>
-            </div>
-            <div class="text-center">
-            <div class="fw-bold"><?= $likes ?></div>
-            <small>Likes rebuts</small>
-            </div>
-        </div>
-        <button class="btn btn-outline-warning btn-sm mt-3 w-100" data-bs-toggle="modal" data-bs-target="#editProfileModal">Editar perfil</button>
-        </div>
-    </div>
-    </div>
-
-      <!-- Publicacions de l'usuari -->
-      <div class="col-12 col-lg-9">
-        <h4 class="mb-4">Les meves publicacions</h4>
-
-        <!-- Exemple de publicació -->
-        <div class="card shadow-sm bg-dark text-white text-card mb-2">
-          <div class="card-body">
-            <div class="d-flex flex-start align-items-center">
-              <img class="rounded-circle shadow-1-strong me-3 avatar" src="<?= $avatar ?>" alt="avatar">
-              <div>
-                <div class="d-flex align-items-center">
-                  <h6 class="fw-bold text-warning mb-1 me-1">@<?= $alies ?></h6>
-                  <span class="text-info small">(Tu)</span>
-                </div>
-                  <p class="text-info small mb-0">17 oct, 2025</p>
-              </div>
-            </div>
-            <p class="mt-3 mb-3">Aquest és un exemple de text curt, tipus haiku.</p>
-            <div class="d-flex justify-content-start gap-2 mb-1">
-              <button class="btn btn-outline-warning btn-sm btn-like"><i class="bi bi-hand-thumbs-up"></i> 12</button>
-              <button class="btn btn-info btn-sm btn-comment" disabled><i class="bi bi-chat"></i> 1</button>
-            </div>
-            <small class="text-info">Categoria: Haikus</small>
+      <div class="col-12 col-lg-3 mb-4">
+        <div class="card bg-dark text-white shadow-sm">
+          <div class="text-center pt-3">
+            <img src="<?= $avatar ?>" class="rounded-circle shadow-1-strong mx-auto big-avatar" alt="avatar">
+            <h5 class="mt-2 text-warning fw-bold">@<?= $alies ?></h5>
+            <p class="mb-1"><?= $nom ?></p>
+            <p class="px-3 mb-0 text-info small"> <?= $descripcio ?> </p>
           </div>
+        <div class="card-body pt-0">
+          <div class="d-flex justify-content-around mt-3 border-top pt-3">
+            <div class="text-center">
+              <div class="fw-bold"><?= $publicacions ?></div>
+              <small>Publicacions</small>
+            </div>
+            <div class="text-center">
+              <div class="fw-bold"><?= $likes ?></div>
+              <small>Likes rebuts</small>
+            </div>
+          </div>
+          <button class="btn btn-outline-warning btn-sm mt-3 w-100" data-bs-toggle="modal" data-bs-target="#editProfileModal">Editar perfil</button>
         </div>
-
-        <!-- Més publicacions es podrien afegir aquí -->
-        <div class="text-center text-muted mt-4">
-          <i class="bi bi-inbox"></i> No hi ha més publicacions.
+      </div>
+    </div>
+    
+    <!-- Publicacions de l'usuari -->
+    <div class="col-12 col-lg-9">
+      <h4 class="mb-3">Les meves publicacions</h4>
+      <?php if (!empty($posts)): ?>
+        <?php $categoriaNoms = getCategoriaNoms(); ?>
+        <?php foreach ($posts as $post): ?>
+          <div class="card shadow-sm bg-dark text-white text-card mb-2 position-relative">
+            <div class="card-body">
+              <div class="d-flex flex-start align-items-center">
+                <img class="rounded-circle shadow-1-strong me-3 avatar" src="<?= $avatar ?>" alt="avatar">
+                <div>
+                  <div class="d-flex align-items-center">
+                    <h6 class="fw-bold text-warning mb-1 me-1">@<?= $alies ?></h6>
+                    <span class="text-info small me-1">(Tu)</span>
+                    <button type="button" class="btn btn-sm text-info" data-bs-toggle="modal" data-bs-target="#deletePostModal" data-id="<?= $post->getIdPost() ?>">
+                      <i class="bi bi-trash text-danger"></i>
+                    </button>
+                  </div>
+                  <p class="text-info small mb-0"><?= formatDateCa($post->getData()) ?></p>
+                </div>
+              </div>
+              <p class="mt-3 mb-3"><?= $post->getContingut() ?></p>
+              <?php if (!empty($post->getImatge())): ?>
+                <img src="<?= $post->getImatge() ?>" class="img-fluid rounded mb-3 publication-image" alt="Foto publicació">
+              <?php endif; ?>
+              <div class="d-flex justify-content-start gap-2 mb-1">
+                <button class="btn btn-outline-warning btn-sm btn-like" disabled>
+                  <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
+                </button>
+                <button class="btn btn-info btn-sm btn-comment" disabled>
+                  <i class="bi bi-chat"></i> <?= $post->getNumComentaris() ?>
+                </button>
+              </div>
+              <small class="text-info">Categoria: <?= $categoriaNoms[$post->getCategoria()] ?></small>
+            </div>
+          </div>
+        <?php endforeach; ?>
+          <div class="text-center text-muted mt-4">
+            <i class="bi bi-inbox"></i> No hi ha més publicacions.
+          </div>
+          <?php else: ?>
+            <div class="text-center text-muted mt-4">
+              <i class="bi bi-inbox"></i> No tens cap publicació.
+            </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -157,7 +179,7 @@ $publicacions = $_SESSION["publicacions"];
   <div class="modal fade" id="createTextModal" tabindex="-1" aria-labelledby="createTextModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form class="needs-validation" novalidate enctype="multipart/form-data">
+        <form class="needs-validation" novalidate enctype="multipart/form-data" method="POST" action="BL/publish.php">
           <div class="modal-header">
             <h5 class="modal-title" id="createTextModalLabel">Escriu una publicació</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -165,7 +187,7 @@ $publicacions = $_SESSION["publicacions"];
           <div class="modal-body">
             <div class="mb-3">
               <label for="textContent" class="form-label">Text</label>
-              <textarea class="form-control char-counter border-dark" id="textContent" rows="3" maxlength="200" required></textarea>
+              <textarea class="form-control char-counter border-dark" id="textContent" rows="3" maxlength="200" name="textContent" required></textarea>
               <div class="invalid-feedback">
                 El text de la publicació és obligatori.
               </div>
@@ -173,12 +195,12 @@ $publicacions = $_SESSION["publicacions"];
             </div>
             <div class="mb-3">
               <label for="textCategory" class="form-label">Categoria</label>
-              <select class="form-select border-dark" id="textCategory" required>
+              <select class="form-select border-dark" id="textCategory" name="textCategory" required>
                 <option value="">Selecciona una categoria</option>
-                <option>Haikus</option>
-                <option>Cites</option>
-                <option>Pensaments</option>
-                <option>Altres</option>
+                <option value="1">Haikus</option>
+                <option value="2">Cites</option>
+                <option value="3">Pensaments</option>
+                <option value="4">Altres</option>
               </select>
               <div class="invalid-feedback">
                 Has de seleccionar una categoria.
@@ -186,7 +208,7 @@ $publicacions = $_SESSION["publicacions"];
             </div>
             <div class="mb-3">
               <label for="textImage" class="form-label">Afegir imatge (opcional)</label>
-              <input class="form-control border-dark" type="file" id="textImage" accept="image/*">
+              <input class="form-control border-dark" type="file" id="textImage" accept="image/*" name="textImage">
             </div>
           </div>
           <div class="modal-footer">
@@ -267,14 +289,41 @@ $publicacions = $_SESSION["publicacions"];
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tanca"></button>
         </div>
         <div class="modal-body">
-          <p>Estàs segur que vols esborrar el teu perfil? Aquesta acció és irreversible i eliminarà totes les teves publicacions.</p>
+          <p class="mb-1">Estàs segur que vols esborrar el teu perfil?</p>
+          <small class="text-muted">Aquesta acció és irreversible i eliminarà totes les teves publicacions.</small>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel·lar</button>
           <form action="BL/delete.php" method="POST" style="display:inline;">
-            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="action" value="deleteUser">
             <button type="submit" class="btn btn-danger">
               <i class="bi bi-trash"></i> Esborra permanentment
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Esborrar Post -->
+  <div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deletePostModalLabel">Esborrar publicació</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tanca"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-1">Estàs segura que vols esborrar aquesta publicació?</p>
+          <small class="text-muted">Aquesta acció no es pot desfer.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel·lar</button>
+          <form action="BL/delete_post.php" method="POST" style="display:inline;">
+            <input type="hidden" name="action" value="deletePost">
+            <input type="hidden" name="id_publicacio" id="deletePostId">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Esborra
             </button>
           </form>
         </div>
@@ -291,7 +340,7 @@ $publicacions = $_SESSION["publicacions"];
   <?php endif; ?>
 
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js  "></script>
   <script>
     // Limitar caràcters del textarea principal  
     document.querySelectorAll('.char-counter').forEach(textarea => {
@@ -336,6 +385,15 @@ $publicacions = $_SESSION["publicacions"];
         }, 150);
       }, 3000);
     }
+
+    // Passar ID publicació
+    const deletePostModal = document.getElementById('deletePostModal');
+    deletePostModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const postId = button.getAttribute('data-id');
+
+      document.getElementById('deletePostId').value = postId;
+    });
   </script>
 </body>
 </html>

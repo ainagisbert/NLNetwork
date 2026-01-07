@@ -44,23 +44,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    $usuari = new Usuari();
-
-    if ($usuari->existsEmail($email)) {
+    if (Usuari::existsEmail($email)) {
         $_SESSION["errorNumber"] = 2;
         $_SESSION["errorMsg"] = "Aquest correu electrònic ja està registrat.";
         header("Location: ../error.php");
         exit;
     }
 
-    if ($usuari->existsAlias($alies)) {
+    if (Usuari::existsAlias($alies)) {
         $_SESSION["errorNumber"] = 2;
         $_SESSION["errorMsg"] = "Aquest àlies ja està en ús.";
         header("Location: ../error.php");
         exit;
     }
 
-    if ($usuari->addUser($nom, $alies, $email, $contrasenya)) {
+    if (Usuari::addUser($nom, $alies, $email, $contrasenya)) {
         sendWelcomeEmail($email, $nom, $alies);
         $_SESSION["errorNumber"] = 0;
         header("Location: ../index.html");
