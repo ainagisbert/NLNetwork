@@ -12,7 +12,6 @@ class Usuari {
     private $email;
     private $url_imatge;
     private $descripcio;
-    private $likes;
     private $posts = [];
 
     // Fem un constructor intel·ligent, que pot instanciar una classe usuari fins i tot si no li donem un identificador
@@ -33,7 +32,6 @@ class Usuari {
             $this->email = $data['email'];
             $this->url_imatge = $data['url_imatge'];
             $this->descripcio = $data['descripcio'];
-            $this->likes = $data['likes_rebuts'];
             return true;
         }
         return false;
@@ -48,7 +46,10 @@ class Usuari {
     public function getEmail() { return $this->email; }
     public function getAvatar() { return $this->url_imatge; }
     public function getDescripcio() { return $this->descripcio; }
-    public function getLikes() { return $this->likes; }
+    public function getLikes() {
+        $db = new Database();
+        return $db->countLikesRebutsPosts($this->id);
+    }
     public function getPosts() { return $this->posts; }
 
     // Esborra l'usuari
@@ -98,7 +99,6 @@ class Usuari {
                 $row['contingut'],
                 $row['data'],
                 $row['url_imatge'],
-                (int)$row['likes'],
                 $numComentaris,
                 (int)$row['id_usuari'],
                 (int)$row['id_categoria'],
@@ -123,6 +123,37 @@ class Usuari {
         $db = new Database();
         return $db->deletePost($id_publicacio, $this->id);
     }
+
+    public function toggleLikePost($id_publicacio) {
+        if (!isset($this->id)) {
+            throw new Exception("No s'ha carregat cap usuari.");
+        }
+        $db = new Database();
+        return $db->toggleLikePost($id_publicacio, $this->id);
+    }
+
+    public function toggleLikeComentari($id_comentari) {
+        if (!isset($this->id)) {
+            throw new Exception("No s'ha carregat cap usuari.");
+        }
+        $db = new Database();
+        return $db->toggleLikeComentari($id_comentari, $this->id);
+    }
+
+    public function hasLikedPost($id_publicacio) {
+        if (!isset($this->id)) {
+            return false;
+        }
+        $db = new Database();
+        return $db->userHasLikedPost($id_publicacio, $this->id);
+    }
+
+    public function hasLikedComentari($id_comentari) {
+        if (!isset($this->id)) return false;
+        $db = new Database();
+        return $db->userHasLikedComentari($id_comentari, $this->id);
+    }
+
 
     public function addComment($id_publicacio, $contingut) {
         if (!isset($this->id)) {

@@ -68,9 +68,18 @@ class Database {
       return null;
     }
 
+    public function countLikesRebutsPosts($id_usuari) {
+      $sql = "SELECT COUNT(*) AS total 
+              FROM likes_post lp
+              JOIN publicacio p ON lp.id_publicacio = p.id_publicacio
+              WHERE p.id_usuari = '$id_usuari'";
+      $result = $this->conn->query($sql);
+      return ($result && $row = $result->fetch_assoc()) ? (int)$row['total'] : 0;
+    }
+
     public function addPost($id_usuari, $id_categoria, $contingut, $url_imatge = '') {
-      $sql = "INSERT INTO publicacio (contingut, `data`, url_imatge, likes, id_usuari, id_categoria)
-              VALUES ('$contingut', NOW(), '$url_imatge', 0, '$id_usuari', '$id_categoria')";
+      $sql = "INSERT INTO publicacio (contingut, `data`, url_imatge, id_usuari, id_categoria)
+              VALUES ('$contingut', NOW(), '$url_imatge', '$id_usuari', '$id_categoria')";
       return $this->conn->query($sql);
     }
 
@@ -90,6 +99,12 @@ class Database {
     public function deletePost($id_publicacio, $id_usuari) {
       $sql = "DELETE FROM publicacio WHERE id_publicacio = '$id_publicacio' AND id_usuari = '$id_usuari'";
       return $this->conn->query($sql);
+    }
+
+    public function countLikesPost($id_publicacio) {
+      $sql = "SELECT COUNT(*) AS total FROM likes_post WHERE id_publicacio = '$id_publicacio'";
+      $result = $this->conn->query($sql);
+      return ($result && $row = $result->fetch_assoc()) ? (int)$row['total'] : 0;
     }
 
     public function countComments($id_publicacio) {
@@ -115,8 +130,8 @@ class Database {
     }
 
     public function addComment($id_usuari, $id_publicacio, $contingut) {
-        $sql = "INSERT INTO comentari (contingut, data, likes, id_usuari, id_publicacio)
-                VALUES ('$contingut', NOW(), 0, '$id_usuari', '$id_publicacio')";
+        $sql = "INSERT INTO comentari (contingut, data, id_usuari, id_publicacio)
+                VALUES ('$contingut', NOW(), '$id_usuari', '$id_publicacio')";
         return $this->conn->query($sql);
     }
 
@@ -141,5 +156,46 @@ class Database {
         $sql = "DELETE FROM comentari WHERE id_comentari = '$id_comentari' AND id_usuari = '$id_usuari'";
         return $this->conn->query($sql);
     }
+    public function countLikesComentari($id_comentari) {
+      $sql = "SELECT COUNT(*) AS total FROM likes_comentari WHERE id_comentari = '$id_comentari'";
+      $result = $this->conn->query($sql);
+      return ($result && $row = $result->fetch_assoc()) ? (int)$row['total'] : 0;
+    }
+
+    public function toggleLikePost($id_publicacio, $id_usuari) {
+      $check = "SELECT 1 FROM likes_post WHERE id_publicacio = '$id_publicacio' AND id_usuari = '$id_usuari'";
+      $result = $this->conn->query($check);
+      
+      if ($result && $result->num_rows > 0) {
+          $sql = "DELETE FROM likes_post WHERE id_publicacio = '$id_publicacio' AND id_usuari = '$id_usuari'";
+      } else {
+          $sql = "INSERT INTO likes_post (id_publicacio, id_usuari) VALUES ('$id_publicacio', '$id_usuari')";
+      }
+      return $this->conn->query($sql);
+    }
+
+    public function toggleLikeComentari($id_comentari, $id_usuari) {
+      $check = "SELECT 1 FROM likes_comentari WHERE id_comentari = '$id_comentari' AND id_usuari = '$id_usuari'";
+      $result = $this->conn->query($check);
+      
+      if ($result && $result->num_rows > 0) {
+          $sql = "DELETE FROM likes_comentari WHERE id_comentari = '$id_comentari' AND id_usuari = '$id_usuari'";
+      } else {
+          $sql = "INSERT INTO likes_comentari (id_comentari, id_usuari) VALUES ('$id_comentari', '$id_usuari')";
+      }
+      return $this->conn->query($sql);
+    }
+
+    public function userHasLikedPost($id_publicacio, $id_usuari) {
+      $sql = "SELECT 1 FROM likes_post WHERE id_publicacio = '$id_publicacio' AND id_usuari = '$id_usuari'";
+      $result = $this->conn->query($sql);
+      return $result && $result->num_rows > 0;
+  }
+
+  public function userHasLikedComentari($id_comentari, $id_usuari) {
+    $sql = "SELECT 1 FROM likes_comentari WHERE id_comentari = '$id_comentari' AND id_usuari = '$id_usuari'";
+    $result = $this->conn->query($sql);
+    return $result && $result->num_rows > 0;
+  }
 }
 ?>

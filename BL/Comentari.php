@@ -12,11 +12,10 @@ class Comentari {
     private $id_usuari;
     private $id_publicacio;
 
-    public function __construct($id_comentari = null, $contingut = '', $data = null, $likes = 0, $id_usuari = null, $id_publicacio = null) {
+    public function __construct($id_comentari = null, $contingut = '', $data = null, $id_usuari = null, $id_publicacio = null) {
         $this->id_comentari = $id_comentari;
         $this->contingut = $contingut;
         $this->data = $data;
-        $this->likes = $likes;
         $this->id_usuari = $id_usuari;
         $this->id_publicacio = $id_publicacio;
     }
@@ -24,7 +23,10 @@ class Comentari {
     public function getIdCom() { return $this->id_comentari; }
     public function getContingut() { return $this->contingut; }
     public function getData() { return $this->data; }
-    public function getLikes() { return $this->likes; }
+    public function getLikes() {
+        $db = new Database();
+        return $db->countLikesComentari($this->id_comentari);
+    }
     public function getUser() { return $this->id_usuari; }
 
     public static function getAll() {

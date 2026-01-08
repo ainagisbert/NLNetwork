@@ -61,7 +61,7 @@ foreach ($totsPosts as $post) {
         </form>
         <!-- Menú de navegació -->
         <ul class="navbar-nav align-items-center gap-2">
-          <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
+          <?php if ($isLogged): ?>
             <li class="nav-item">
               <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTextModal">
                 <i class="bi bi-bookmark-plus"></i> Crear Text
@@ -99,7 +99,7 @@ foreach ($totsPosts as $post) {
       <form class="d-flex w-100 mb-4" role="search" action="visor.php" method="GET">
         <input class="form-control form-control-sm" type="search" name="alies" placeholder="Cerca..." aria-label="Cerca continguts">
       </form>
-      <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
+      <?php if ($isLogged): ?>
         <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#createTextModal">
           <i class="bi bi-bookmark-plus"></i> Crear Text
         </button>
@@ -182,9 +182,24 @@ foreach ($totsPosts as $post) {
                         <img src="<?= $post->getImatge() ?>" class="img-fluid rounded mb-3 publication-image" alt="Foto publicació">
                       <?php endif; ?>
                       <div class="d-flex justify-content-start gap-2 mb-1">
-                        <button class="btn btn-outline-warning btn-sm btn-like" <?= $isLogged ? '' : 'disabled' ?>>
-                          <i class="bi bi-hand-thumbs-up"></i> <?= (int)$post->getLikes() ?>
-                        </button>
+                        <?php
+                        $hasLiked = false;
+                        if ($isLogged) {
+                            $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
+                            $hasLiked = $usuariLoggejat->hasLikedPost($post->getIdPost());
+                            $btnClass = $hasLiked ? 'btn-warning' : 'btn-outline-warning';
+                            $disabled = '';
+                        } else {
+                          $btnClass = 'btn-warning';
+                          $disabled = 'disabled';
+                        }
+                        ?>
+                        <form method="POST" action="BL/like_post.php" style="display:inline;">
+                          <input type="hidden" name="id_publicacio" value="<?= (int)$post->getIdPost() ?>">
+                          <button type="submit" class="btn <?= $btnClass ?> btn-sm" <?= $disabled ?>>
+                            <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
+                          </button>
+                        </form>
                         <button class="btn btn-outline-info btn-sm btn-comment">
                           <i class="bi bi-chat"></i> <?= (int)($post->getNumComentaris()) ?>
                         </button>
@@ -246,9 +261,24 @@ foreach ($totsPosts as $post) {
                                 </div>
                                 <p class="mt-3 mb-3"><?= $comentari->getContingut() ?></p>
                                 <div class="d-flex justify-content-start gap-2 mt-1">
-                                  <button class="btn btn-outline-warning btn-sm p-1 px-2" <?= $isLogged ? '' : 'disabled' ?>>
-                                    <i class="bi bi-hand-thumbs-up"></i> <?= (int)$comentari->getLikes() ?>
-                                  </button>
+                                  <?php
+                                  $hasLikedCom = false;
+                                  if ($isLogged) {
+                                      $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
+                                      $hasLikedCom = $usuariLoggejat->hasLikedComentari($comentari->getIdCom());
+                                      $btnClassCom = $hasLikedCom ? 'btn-warning' : 'btn-outline-warning';
+                                      $disabledCom = '';
+                                  } else {
+                                    $btnClassCom = 'btn-warning';
+                                    $disabledCom = 'disabled';
+                                  }
+                                  ?>
+                                  <form method="POST" action="BL/like_comment.php" style="display:inline;">
+                                    <input type="hidden" name="id_comentari" value="<?= (int)$comentari->getIdCom() ?>">
+                                    <button type="submit" class="btn <?= $btnClassCom ?> btn-sm p-1 px-2" <?= $disabledCom ?>> 
+                                      <i class="bi bi-hand-thumbs-up"></i> <?= $comentari->getLikes() ?>
+                                    </button>
+                                  </form>
                                 </div>
                               </div>
                             </div>

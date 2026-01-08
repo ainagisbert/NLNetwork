@@ -24,7 +24,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $usuari = new Usuari($identificador);
     $_SESSION["id_usuari"] = $usuari->getId();
-    $_SESSION["logged_in"] = true;
 
     $_SESSION["errorNumber"] = 0;
     header("Location: ../dashboard.php");

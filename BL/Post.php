@@ -16,12 +16,11 @@ class Post {
     private $id_categoria;
     private $comentaris = [];
 
-    public function __construct($id_publicacio = null, $contingut = '', $data = null, $url_imatge = '', $likes = 0, $numComentaris = 0, $id_usuari = null, $id_categoria = null) {
+    public function __construct($id_publicacio = null, $contingut = '', $data = null, $url_imatge = '', $numComentaris = 0, $id_usuari = null, $id_categoria = null) {
         $this->id_publicacio = $id_publicacio;
         $this->contingut = $contingut;
         $this->data = $data;
         $this->url_imatge = $url_imatge;
-        $this->likes = $likes;
         $this->numComentaris = $numComentaris;
         $this->id_usuari = $id_usuari;
         $this->id_categoria = $id_categoria;
@@ -31,7 +30,10 @@ class Post {
     public function getContingut() { return $this->contingut; }
     public function getData() { return $this->data; }
     public function getImatge() { return $this->url_imatge; }
-    public function getLikes() { return $this->likes; }
+    public function getLikes() { 
+        $db = new Database();
+        return $db->countLikesPost($this->id_publicacio);
+    }
     public function getNumComentaris() { return $this->numComentaris; }
     public function getUser() { return $this->id_usuari; }
     public function getCategoria() { return $this->id_categoria; }
@@ -50,7 +52,6 @@ class Post {
                 $row['id_comentari'],
                 $row['contingut'],
                 $row['data'],
-                (int)$row['likes'],
                 (int)$row['id_usuari'],
                 (int)$row['id_publicacio'],
             );
@@ -70,7 +71,6 @@ class Post {
                 $row['contingut'],
                 $row['data'],
                 $row['url_imatge'],
-                (int)$row['likes'],
                 $numComentaris,
                 (int)$row['id_usuari'],
                 (int)$row['id_categoria']

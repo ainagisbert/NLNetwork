@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || !isset($_SESSION['id_usuari'])) {
+if (!isset($_SESSION['id_usuari'])) {
     $_SESSION['errorNumber'] = 9;
     $_SESSION['errorMsg'] = "Has d'iniciar sessió per accedir a aquesta pàgina.";
     header("Location: error.php");
@@ -12,6 +12,7 @@ require_once('BL/Usuari.php');
 require_once('helpers/display.php');
 
 $usuari = new Usuari($_SESSION["id_usuari"]);
+$isLogged = isset($_SESSION['id_usuari']);
 
 $usuari->loadPosts();
 $posts = $usuari->getPosts();
@@ -151,9 +152,24 @@ $publicacions = count($posts);
                 <img src="<?= $post->getImatge() ?>" class="img-fluid rounded mb-3 publication-image" alt="Foto publicació">
               <?php endif; ?>
               <div class="d-flex justify-content-start gap-2 mb-1">
-                <button class="btn btn-outline-warning btn-sm btn-like" disabled>
-                  <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
-                </button>
+                <?php
+                $hasLiked = false;
+                if ($isLogged) {
+                  $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
+                  $hasLiked = $usuariLoggejat->hasLikedPost($post->getIdPost());
+                  $btnClass = $hasLiked ? 'btn-warning' : 'btn-outline-warning';
+                  $disabled = '';
+                } else {
+                  $btnClass = 'btn-warning';
+                  $disabled = 'disabled';
+                }
+                ?>
+                <form method="POST" action="BL/like_post.php" style="display:inline;">
+                  <input type="hidden" name="id_publicacio" value="<?= (int)$post->getIdPost() ?>">
+                  <button type="submit" class="btn <?= $btnClass ?> btn-sm" <?= $disabled ?>>
+                    <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
+                  </button>
+                </form>
                 <button class="btn btn-info btn-sm btn-comment" disabled>
                   <i class="bi bi-chat"></i> <?= $post->getNumComentaris() ?>
                 </button>
@@ -241,7 +257,7 @@ $publicacions = count($posts);
               <label for="profileUsername" class="form-label">Nom d'usuari</label>
               <input type="text" class="form-control border-dark" id="profileUsername" name="alies" value="<?= $alies ?>" maxlength="30" required>
               <div class="invalid-feedback">
-                El nom dusuari és obligatori.
+                El nom d'usuari és obligatori.
               </div>
             </div>
 
@@ -261,7 +277,12 @@ $publicacions = count($posts);
 
             <div class="mb-3">
               <label for="profilePassword" class="form-label">Nova contrasenya</label>
-              <input type="password" class="form-control border-dark" id="profilePassword" name="contrasenya" placeholder="Deixa en blanc per no canviar">
+              <div class="input-group">
+                <input type="password" class="form-control border-dark" id="profilePassword" name="contrasenya" placeholder="Deixa en blanc per no canviar">
+                <button class="btn btn-dark" type="button" id="toggleNewPassword">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
             </div>
 
             <div class="form-check mb-3">
@@ -394,6 +415,23 @@ $publicacions = count($posts);
 
       document.getElementById('deletePostId').value = postId;
     });
+
+    // Funció reutilitzable per alternar visibilitat
+    function setupPasswordToggle(toggleButtonId, inputId) {
+      const toggleBtn = document.querySelector(`#${toggleButtonId}`);
+      const input = document.querySelector(`#${inputId}`);
+
+      toggleBtn?.addEventListener('click', () => {
+        const isPassword = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPassword ? 'text' : 'password');
+        toggleBtn.innerHTML = isPassword
+          ? '<i class="bi bi-eye-slash"></i>'
+          : '<i class="bi bi-eye"></i>';
+      });
+    }
+
+    // Aplica a tots dos camps
+    setupPasswordToggle('toggleNewPassword', 'profilePassword')
   </script>
 </body>
 </html>

@@ -12,7 +12,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $contingut = sanitizeString($_POST['textContent'] ?? '');
-    $id_categoria = ($_POST['textCategory'] ?? 0);
+    $id_categoria = $_POST['textCategory'];
 
     $usuari = new Usuari($_SESSION["id_usuari"]);
 
