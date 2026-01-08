@@ -2,6 +2,7 @@
 <?php
 
 require_once(__DIR__ . '/../DL/Database.php');
+require_once('Comentari.php');
 
 class Post {
 
@@ -10,17 +11,18 @@ class Post {
     private $data;
     private $url_imatge;
     private $likes;
-    private $comentaris;
+    private $numComentaris;
     private $id_usuari;
     private $id_categoria;
+    private $comentaris = [];
 
-    public function __construct($id_publicacio = null, $contingut = '', $data = null, $url_imatge = '', $likes = 0, $comentaris = 0, $id_usuari = null, $id_categoria = null) {
+    public function __construct($id_publicacio = null, $contingut = '', $data = null, $url_imatge = '', $likes = 0, $numComentaris = 0, $id_usuari = null, $id_categoria = null) {
         $this->id_publicacio = $id_publicacio;
         $this->contingut = $contingut;
-        $this->data = $data ?? date('Y-m-d H:i:s');
+        $this->data = $data;
         $this->url_imatge = $url_imatge;
         $this->likes = $likes;
-        $this->comentaris = $comentaris;
+        $this->numComentaris = $numComentaris;
         $this->id_usuari = $id_usuari;
         $this->id_categoria = $id_categoria;
     }
@@ -30,13 +32,51 @@ class Post {
     public function getData() { return $this->data; }
     public function getImatge() { return $this->url_imatge; }
     public function getLikes() { return $this->likes; }
-    public function getNumComentaris() { return $this->comentaris; }
+    public function getNumComentaris() { return $this->numComentaris; }
     public function getUser() { return $this->id_usuari; }
     public function getCategoria() { return $this->id_categoria; }
+    public function getComentaris() { return $this->comentaris; }
+
+    public function loadComments() {
+        if (!isset($this->id_publicacio)) {
+            throw new Exception("No s'ha carregat cap publicació.");
+        }
+        $db = new Database();
+        $commentsData = $db->getCommentsById($this->id_publicacio);
+        $this->comentaris = [];
+
+        foreach ($commentsData as $row) {
+            $this->comentaris[] = new Comentari(
+                $row['id_comentari'],
+                $row['contingut'],
+                $row['data'],
+                (int)$row['likes'],
+                (int)$row['id_usuari'],
+                (int)$row['id_publicacio'],
+            );
+        }
+    }
 
     public static function getAll() {
         $db = new Database();
-        return $db->getAllPosts();
+        $postsData = $db->getAllPosts();
+        $posts = [];
+
+        foreach ($postsData as $row) {
+            $numComentaris = $db->countComments($row['id_publicacio']);
+            
+            $posts[] = new Post(
+                $row['id_publicacio'],
+                $row['contingut'],
+                $row['data'],
+                $row['url_imatge'],
+                (int)$row['likes'],
+                $numComentaris,
+                (int)$row['id_usuari'],
+                (int)$row['id_categoria']
+            );
+        }
+        return $posts;
     }
 }
 

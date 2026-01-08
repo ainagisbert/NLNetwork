@@ -82,7 +82,6 @@ class Usuari {
         return $db->updatePassword($this->id, $passwordHash);
     }
 
-    // Carrega tots els posts d'aquest usuari
     public function loadPosts() {
         if (!isset($this->id)) {
             throw new Exception("No s'ha carregat cap usuari.");
@@ -123,6 +122,22 @@ class Usuari {
         }
         $db = new Database();
         return $db->deletePost($id_publicacio, $this->id);
+    }
+
+    public function addComment($id_publicacio, $contingut) {
+        if (!isset($this->id)) {
+            throw new Exception("No s'ha carregat cap usuari.");
+        }
+        $db = new Database();
+        return $db->addComment($this->id, $id_publicacio, $contingut);
+    }
+
+    public function deleteComment($id_comentari) {
+        if (!isset($this->id)) {
+            throw new Exception("No s'ha carregat cap usuari.");
+        }
+        $db = new Database();
+        return $db->deleteComment($id_comentari, $this->id);
     }
 
     // ========== MÈTODES ESTÀTICS / DE CLASSE ==========

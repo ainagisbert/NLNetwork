@@ -5,21 +5,7 @@ require_once('BL/Post.php');
 require_once('BL/Usuari.php');
 require_once('helpers/display.php');
 
-$totesLesPublicacions = Post::getAll();
-
-$publicacionsPerCategoria = [
-    1 => [],
-    2 => [],
-    3 => [],
-    4 => []
-];
-
-foreach ($totesLesPublicacions as $post) {
-    $categoria = (int)$post['id_categoria'];
-    if (isset($publicacionsPerCategoria[$categoria])) {
-        $publicacionsPerCategoria[$categoria][] = $post;
-    }
-}
+$totsPosts = Post::getAll();
 
 $categoriaNoms = getCategoriaNoms();
 $isLogged = isset($_SESSION['id_usuari']);
@@ -31,6 +17,14 @@ $categoriaIds = [
     3 => 'pensaments',
     4 => 'altres'
 ];
+
+$publicacionsPerCategoria = [1 => [], 2 => [], 3 => [], 4 => []];
+foreach ($totsPosts as $post) {
+    $categoria = $post->getCategoria();
+    if (isset($publicacionsPerCategoria[$categoria])) {
+        $publicacionsPerCategoria[$categoria][] = $post;
+    }
+}
 ?>
 
 <!-- Publicacions de la xarxa separades en categories -->
@@ -157,10 +151,12 @@ $categoriaIds = [
               <?php if (!empty($publicacionsPerCategoria[$catId])): ?>
                 <?php foreach ($publicacionsPerCategoria[$catId] as $post): ?>
                   <?php
-                  $autor = new Usuari($post['id_usuari']);
+                  $autor = new Usuari($post->getUser());
                   $avatar = $autor->getAvatar();
                   $alies = $autor->getAlies();
-                  $esMeuPost = ($isLogged && $post['id_usuari'] == (int)$_SESSION['id_usuari']);
+                  $esMeuPost = ($isLogged && $post->getUser() == (int)$_SESSION['id_usuari']);
+                  $post->loadComments();
+                  $comentaris = $post->getComentaris();
                   ?>
                   <div class="card shadow-sm bg-dark text-white text-card mb-2">
                     <div class="card-body">
@@ -169,63 +165,99 @@ $categoriaIds = [
                         <div>
                           <?php if ($esMeuPost): ?>
                             <div class="d-flex align-items-center">
-                              <h6 class="fw-bold text-warning mb-1 me-1">@<a href="dashboard.php" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover"><?= $alies ?></a></h6>
+                              <h6 class="fw-bold text-warning mb-0 me-1">@<a href="dashboard.php" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover"><?= $alies ?></a></h6>
                               <span class="text-info small">(Tu)</span>
+                              <button type="button" class="btn btn-sm text-info mb-0" data-bs-toggle="modal" data-bs-target="#deletePostModal" data-id="<?= $post->getIdPost() ?>">
+                                <i class="bi bi-trash text-danger"></i>
+                              </button>
                             </div>
                           <?php else: ?>
                             <h6 class="fw-bold text-warning mb-1">@<a href="visor.php?alies=<?= urlencode($alies) ?>" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover"><?= $alies ?></a></h6>
                           <?php endif; ?>
-                          <p class="text-info small mb-0"><?= formatDateCa($post['data']) ?></p>
+                          <p class="text-info small mb-0"><?= formatDateCa($post->getData()) ?></p>
                         </div>
                       </div>
-                      <p class="mt-3 mb-3"><?= $post['contingut'] ?></p>
-                      <?php if (!empty($post['url_imatge'])): ?>
-                        <img src="<?= $post['url_imatge'] ?>" class="img-fluid rounded mb-3 publication-image" alt="Foto publicació">
+                      <p class="mt-3 mb-3"><?= $post->getContingut() ?></p>
+                      <?php if (!empty($post->getImatge())): ?>
+                        <img src="<?= $post->getImatge() ?>" class="img-fluid rounded mb-3 publication-image" alt="Foto publicació">
                       <?php endif; ?>
                       <div class="d-flex justify-content-start gap-2 mb-1">
                         <button class="btn btn-outline-warning btn-sm btn-like" <?= $isLogged ? '' : 'disabled' ?>>
-                          <i class="bi bi-hand-thumbs-up"></i> <?= (int)$post['likes'] ?>
+                          <i class="bi bi-hand-thumbs-up"></i> <?= (int)$post->getLikes() ?>
                         </button>
-                        <button class="btn btn-outline-info btn-sm btn-comment" <?= $isLogged ? '' : 'disabled' ?>>
-                          <i class="bi bi-chat"></i> <?= (int)($post['comentaris']) ?>
+                        <button class="btn btn-outline-info btn-sm btn-comment">
+                          <i class="bi bi-chat"></i> <?= (int)($post->getNumComentaris()) ?>
                         </button>
                       </div>
-                      <small class="text-info">Categoria: <?= $categoriaNoms[$post['id_categoria']] ?></small>
+                      <small class="text-info">Categoria: <?= $categoriaNoms[$post->getCategoria()] ?></small>
 
                       <!-- Secció comentaris (inicialment oculta) -->
                       <div class="card-footer bg-dark my-3 border-0" style="display: none;">
-                        <form class="needs-validation comment-form" novalidate>
-                          <div class="d-flex flex-start w-100">
-                            <img class="rounded-circle shadow-1-strong me-3 form-avatar" src="images/profile_placeholder.jpg" alt="avatar">
-                            <div class="form-outline w-100">
-                              <textarea class="form-control char-counter" rows="3" maxlength="200" required></textarea>
-                              <div class="invalid-feedback">
-                                El comentari no pot estar buit.
+                        <?php if ($isLogged): ?>
+                          <?php
+                          $usuariLogged = new Usuari($_SESSION['id_usuari']);
+                          $avatarLogged = $usuariLogged->getAvatar();
+                          ?>
+                          <form class="needs-validation comment-form" method = "post" action = "BL/comment.php" novalidate>
+                            <input type="hidden" name="idPost" value="<?= (int)$post->getIdPost() ?>">
+                            <div class="d-flex flex-start w-100">
+                              <img class="rounded-circle shadow-1-strong me-3 form-avatar" src="<?= $avatarLogged ?>" alt="avatar">
+                              <div class="form-outline w-100">
+                                <textarea class="form-control char-counter" rows="3" maxlength="200" name="textContent" required></textarea>
+                                <div class="invalid-feedback">
+                                  El comentari no pot estar buit.
+                                </div>
+                                <div class="form-text text-end text-info mt-1">200 caràcters restants</div>
                               </div>
-                              <div class="form-text text-end text-info mt-1">200 caràcters restants</div>
                             </div>
-                          </div>
-                          <div class="float-end mt-1 pt-1">
-                            <button type="submit" class="btn btn-warning btn-sm">Comenta</button>
-                          </div>
-                          <div class="clearfix"></div>
-                        </form>
+                            <div class="float-end mt-1 pt-1">
+                              <button type="submit" class="btn btn-warning btn-sm">Comenta</button>
+                            </div>
+                            <div class="clearfix"></div>
+                          </form>
+                        <?php endif; ?>
                         <!-- Exemple comentari -->
-                        <div class="card shadow-lg bg-dark text-white text-card mb-0 mt-3" style="max-width: 100%;">
-                            <div class="card-body py-3 px-3">
-                              <div class="d-flex align-items-start mb-1">
-                                <img class="rounded-circle shadow-1-strong me-2 comment-avatar" src="images/profile_placeholder.jpg" alt="avatar">
-                              <div>
-                                <h6 class="fw-bold text-warning mb fs-6">@<a href="visor.php?alies=usuariPublic" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover">usuariPublic</a></h6>
-                                <p class="text-info small mb-0">20 oct, 2025</p>
+                        <?php if(!empty($comentaris)): ?>
+                          <?php foreach ($comentaris as $comentari): ?>
+                            <div class="card shadow-lg bg-dark text-white text-card mb-0 mt-3" style="max-width: 100%;">
+                              <div class="card-body py-3 px-3">
+                                <?php
+                                $autorCom = new Usuari($comentari->getUser());
+                                $avatarCom = $autorCom->getAvatar();
+                                $aliesCom = $autorCom->getAlies();
+                                $esMeuCom = ($isLogged && $comentari->getUser() == (int)$_SESSION['id_usuari']);
+                                ?>
+                                <div class="d-flex align-items-start mb-1">
+                                  <img class="rounded-circle shadow-1-strong me-2 comment-avatar" src="<?= $avatarCom ?>" alt="avatar">
+                                  <div>
+                                    <?php if ($esMeuCom): ?>
+                                      <div class="d-flex align-items-center">
+                                        <h6 class="fw-bold text-warning fs-6 me-1">@<a href="dashboard.php" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover"><?= $aliesCom ?></a></h6>
+                                        <span class="text-info small">(Tu)</span>
+                                        <button type="button" class="btn btn-sm text-info mb-0" data-bs-toggle="modal" data-bs-target="#deleteCommentModal" data-id="<?= $comentari->getIdCom() ?>">
+                                          <i class="bi bi-trash text-danger"></i>
+                                        </button>
+                                      </div>
+                                    <?php else: ?>
+                                      <h6 class="fw-bold text-warning fs-6">@<a href="visor.php?alies=<?= urlencode($aliesCom) ?>" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover"><?= $aliesCom ?></a></h6>
+                                    <?php endif; ?>
+                                    <p class="text-info small mb-0"><?= formatDateCa($comentari->getData()) ?></p>
+                                  </div>
+                                </div>
+                                <p class="mt-3 mb-3"><?= $comentari->getContingut() ?></p>
+                                <div class="d-flex justify-content-start gap-2 mt-1">
+                                  <button class="btn btn-outline-warning btn-sm p-1 px-2" <?= $isLogged ? '' : 'disabled' ?>>
+                                    <i class="bi bi-hand-thumbs-up"></i> <?= (int)$comentari->getLikes() ?>
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                            <p class="mt-3 mb-3">Aquest és un exemple de comentari breu. No es poden tornar a comentar, només fer like.</p>
-                            <div class="d-flex justify-content-start gap-2 mt-1">
-                              <button class="btn btn-outline-warning btn-sm p-1 px-2"><i class="bi bi-hand-thumbs-up"></i> 32</button>
-                            </div>
-                            </div>
+                          <?php endforeach; ?>
+                        <?php else: ?>
+                          <div class="text-center text-info mt-4">
+                            <i class="bi bi-inbox"></i> No hi ha cap comentari.
                           </div>
+                        <?php endif; ?>
                       </div>
                     </div>
                   </div>
@@ -287,6 +319,58 @@ $categoriaIds = [
     </div>
   </div>
 
+  <!-- Modal Esborrar Post -->
+  <div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deletePostModalLabel">Esborrar publicació</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tanca"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-1">Estàs segura que vols esborrar aquesta publicació?</p>
+          <small class="text-muted">Aquesta acció no es pot desfer.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel·lar</button>
+          <form action="BL/delete_post.php" method="POST" style="display:inline;">
+            <input type="hidden" name="action" value="deletePost">
+            <input type="hidden" name="id_publicacio" id="deletePostId">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Esborra
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Esborrar Comentari -->
+  <div class="modal fade" id="deleteCommentModal" tabindex="-1" aria-labelledby="deleteCommentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteCommentModalLabel">Esborrar comentari</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tanca"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-1">Estàs segura que vols esborrar aquest comentari?</p>
+          <small class="text-muted">Aquesta acció no es pot desfer.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel·lar</button>
+          <form action="BL/delete_comment.php" method="POST" style="display:inline;">
+            <input type="hidden" name="action" value="deleteComment">
+            <input type="hidden" name="id_comentari" id="deleteCommentId">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Esborra
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -336,6 +420,21 @@ $categoriaIds = [
         }, false);
       });
     })();
+
+    const deletePostModal = document.getElementById('deletePostModal');
+    deletePostModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const postId = button.getAttribute('data-id');
+
+      document.getElementById('deletePostId').value = postId;
+    });
+
+    const deleteCommentModal = document.getElementById('deleteCommentModal');
+    deleteCommentModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const commentId = button.getAttribute('data-id');
+        document.getElementById('deleteCommentId').value = commentId;
+    });
   </script>
 </body>
 </html>

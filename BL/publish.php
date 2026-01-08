@@ -26,7 +26,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $url_imatge = $imageResult['url'];
 
     if ($usuari->addPost($id_categoria, $contingut, $url_imatge)) {
-        header("Location: ../dashboard.php");
+        $_SESSION["errorNumber"] = 0;
+        $referrer = $_SERVER['HTTP_REFERER'] ?? '../dashboard.php';
+        header("Location: $referrer");
         exit;
     } else {
         $_SESSION["errorNumber"] = 12;

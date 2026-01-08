@@ -113,5 +113,33 @@ class Database {
       }
       return $posts;
     }
+
+    public function addComment($id_usuari, $id_publicacio, $contingut) {
+        $sql = "INSERT INTO comentari (contingut, data, likes, id_usuari, id_publicacio)
+                VALUES ('$contingut', NOW(), 0, '$id_usuari', '$id_publicacio')";
+        return $this->conn->query($sql);
+    }
+
+    public function getCommentsById($id_publicacio) {
+        $sql = "SELECT c.*, u.alies, u.url_imatge 
+                FROM comentari c
+                JOIN usuari u ON c.id_usuari = u.id_usuari
+                WHERE c.id_publicacio = '$id_publicacio'
+                ORDER BY c.data ASC";
+        $result = $this->conn->query($sql);
+        
+        $comments = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $comments[] = $row;
+            }
+        }
+        return $comments;
+    }
+
+    public function deleteComment($id_comentari, $id_usuari) {
+        $sql = "DELETE FROM comentari WHERE id_comentari = '$id_comentari' AND id_usuari = '$id_usuari'";
+        return $this->conn->query($sql);
+    }
 }
 ?>

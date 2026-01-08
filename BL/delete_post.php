@@ -15,7 +15,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
     if ($usuari->deletePost($id_publicacio)) {
         $_SESSION["errorNumber"] = 0;
-        header("Location: ../dashboard.php");
+        $referrer = $_SERVER['HTTP_REFERER'] ?? '../dashboard.php';
+        header("Location: $referrer");
         exit;
     } else {
         $_SESSION["errorNumber"] = 13;

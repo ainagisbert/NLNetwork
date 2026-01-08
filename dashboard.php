@@ -137,7 +137,7 @@ $publicacions = count($posts);
                 <img class="rounded-circle shadow-1-strong me-3 avatar" src="<?= $avatar ?>" alt="avatar">
                 <div>
                   <div class="d-flex align-items-center">
-                    <h6 class="fw-bold text-warning mb-1 me-1">@<?= $alies ?></h6>
+                    <h6 class="fw-bold text-warning mb-0 me-1">@<?= $alies ?></h6>
                     <span class="text-info small me-1">(Tu)</span>
                     <button type="button" class="btn btn-sm text-info" data-bs-toggle="modal" data-bs-target="#deletePostModal" data-id="<?= $post->getIdPost() ?>">
                       <i class="bi bi-trash text-danger"></i>
