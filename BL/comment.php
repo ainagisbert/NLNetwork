@@ -1,4 +1,3 @@
-<!-- Afegir un nou comentari a la BD i retornem a l'usuari al Home, ja que és l'únic lloc des d'on es pot realitzar aquesta acció -->
 <?php
 session_start();
 

@@ -1,4 +1,3 @@
-<!-- Definició classe Database
 Les comandes SQL només estan aquí. -->
 <?php
 

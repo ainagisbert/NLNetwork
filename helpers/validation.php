@@ -1,4 +1,3 @@
-<!-- Funcions de sanejament i validació dels continguts -->
 <?php
 
 require_once('vendor/autoload.php');

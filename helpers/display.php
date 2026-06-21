@@ -1,4 +1,3 @@
-<!-- Funcions reutilitzables reutilitzables per formatar dades i generar elements visuals a les vistes -->
 <?php
 // Mapeig global de categories (fixes)
 function getCategoriaNoms() {

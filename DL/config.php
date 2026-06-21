@@ -1,4 +1,3 @@
-<!-- Constants necessàries accedir a la base de dades -->
 <?php
 
 define("SERVERNAME", getenv("MYSQLHOST"));

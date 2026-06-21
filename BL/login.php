@@ -1,4 +1,3 @@
-<!-- Fem el login utilitzant el alies o correu i redirecció al dashboard -->
 <?php
 session_start();
 

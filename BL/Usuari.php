@@ -1,4 +1,3 @@
-<!-- Definició classe Usuari amb els seus getters i mètodes necessaris perquè realitzi accions -->
 <?php
 
 require_once(__DIR__ . '/../DL/Database.php');

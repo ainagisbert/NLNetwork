@@ -1,4 +1,3 @@
-<!-- Donar like a una publicació i redirecció a l'última pàgina visitada -->
 <?php
 session_start();
 require_once('Usuari.php');

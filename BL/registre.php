@@ -1,4 +1,3 @@
-<!-- Registre nou usuari i enviament correu de benvinguda -->
 <?php
 
 session_start();

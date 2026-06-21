@@ -1,8 +1,8 @@
 FROM php:8.4-fpm
 
 # Instalar Nginx y extensiones
-RUN apt-get update && apt-get install -y nginx && \
-    docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+RUN apt-get update && apt-get install -y nginx libicu-dev && \
+    docker-php-ext-install mysqli intl && docker-php-ext-enable mysqli intl
 
 # Configurar PHP-FPM para escuchar en puerto 9000
 RUN echo '[global]' > /usr/local/etc/php-fpm.d/zz-docker.conf && \

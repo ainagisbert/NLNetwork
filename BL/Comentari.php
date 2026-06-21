@@ -1,4 +1,3 @@
-<!-- Definició classe Comentari amb els seus getters -->
 <?php
 
 require_once(__DIR__ . '/../DL/Database.php');

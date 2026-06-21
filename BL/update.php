@@ -1,4 +1,3 @@
-<!-- Actualització dades perfil i si canvia la contrasenya, la tornem a fer hash per guardarla. Reedirecció al dashboard -->
 <?php
 session_start();
 
