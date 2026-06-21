@@ -1,4 +1,3 @@
-Les comandes SQL només estan aquí. -->
 <?php
 
 require_once("config.php");
