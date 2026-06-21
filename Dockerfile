@@ -3,16 +3,12 @@ FROM php:8.2-apache
 # Habilitar mysqli
 RUN docker-php-ext-install mysqli
 
-# Diagnóstico: mostrar qué módulos MPM están activos antes de tocar nada
-RUN ls -la /etc/apache2/mods-enabled/ | grep mpm
-
-# Forzar prefork de forma explícita y verificar
-RUN a2dismod mpm_event || true
-RUN a2dismod mpm_worker || true
-RUN a2enmod mpm_prefork
-
-# Verificar tras el cambio
-RUN ls -la /etc/apache2/mods-enabled/ | grep mpm
+# Eliminar todos los MPMs y dejar solo prefork
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.conf \
+           /etc/apache2/mods-enabled/mpm_event.load \
+           /etc/apache2/mods-enabled/mpm_worker.conf \
+           /etc/apache2/mods-enabled/mpm_worker.load \
+    && a2enmod mpm_prefork
 
 COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html
