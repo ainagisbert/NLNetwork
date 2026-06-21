@@ -79,106 +79,78 @@ function validateUserFields($nom, $alies, $email, $contrasenya = null, $isUpdate
     return $errors;
 }
 
-function validateImage(?array $file, string $currentImageUrl, string $uploadDir = '../images/'): array {
+function uploadToCloudinary(string $fileTmpPath): ?string {
+    $cloudName = getenv('CLOUDINARY_CLOUD_NAME');
+    $apiKey    = getenv('CLOUDINARY_API_KEY');
+    $apiSecret = getenv('CLOUDINARY_API_SECRET');
+
+    $timestamp = time();
+    $signature = sha1("timestamp={$timestamp}{$apiSecret}");
+
+    $ch = curl_init("https://api.cloudinary.com/v1_1/{$cloudName}/image/upload");
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => [
+            'file'      => new CURLFile($fileTmpPath),
+            'api_key'   => $apiKey,
+            'timestamp' => $timestamp,
+            'signature' => $signature,
+        ],
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    return $data['secure_url'] ?? null;
+}
+
+function validateImage(?array $file, string $currentImageUrl): array {
     if (!$file || !isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => true, 'url' => $currentImageUrl];
     }
 
-    $fileTmpPath = $file['tmp_name'];
-    $fileName = $file['name'];
-    $fileSize = $file['size'];
-    $fileType = $file['type'];
-
-    $fileNameCmps = explode(".", $fileName);
+    $fileNameCmps  = explode(".", $file['name']);
     $fileExtension = strtolower(end($fileNameCmps));
 
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-
-    if (!in_array($fileExtension, $allowedExtensions)) {
-        return [
-            'success' => false,
-            'url' => $currentImageUrl,
-            'error' => 'Tipus d\'arxiu no permès. Només es permeten: JPG, JPEG, PNG, GIF.'
-        ];
+    if (!in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+        return ['success' => false, 'url' => $currentImageUrl, 'error' => 'Tipus d\'arxiu no permès. Només es permeten: JPG, JPEG, PNG, GIF.'];
     }
 
-    $maxFileSize = 2 * 1024 * 1024; // Imatges de 2MB màxim
-    if ($fileSize > $maxFileSize) {
-        return [
-            'success' => false,
-            'url' => $currentImageUrl,
-            'error' => 'La imatge és massa gran. La mida màxima és 2 MB.'
-        ];
+    if ($file['size'] > 2 * 1024 * 1024) {
+        return ['success' => false, 'url' => $currentImageUrl, 'error' => 'La imatge és massa gran. La mida màxima és 2 MB.'];
     }
 
-    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
-    $destPath = $uploadDir . $newFileName;
-
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+    $url = uploadToCloudinary($file['tmp_name']);
+    if (!$url) {
+        return ['success' => false, 'url' => $currentImageUrl, 'error' => 'Error en pujar la imatge al servidor.'];
     }
 
-    if (move_uploaded_file($fileTmpPath, $destPath)) {
-        $url = 'images/' . $newFileName;
-        return ['success' => true, 'url' => $url];
-    } else {
-        return [
-            'success' => false,
-            'url' => $currentImageUrl,
-            'error' => 'Error en pujar la imatge al servidor.'
-        ];
-    }
+    return ['success' => true, 'url' => $url];
 }
 
-function validateImageForPost(?array $file, string $uploadDir = '../images/') {
+function validateImageForPost(?array $file): array {
     if (!$file || !isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => true, 'url' => null];
     }
 
-    $fileTmpPath = $file['tmp_name'];
-    $fileName = $file['name'];
-    $fileSize = $file['size'];
-    $fileType = $file['type'];
-
-    $fileNameCmps = explode(".", $fileName);
+    $fileNameCmps  = explode(".", $file['name']);
     $fileExtension = strtolower(end($fileNameCmps));
 
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-
-    if (!in_array($fileExtension, $allowedExtensions)) {
-        return [
-            'success' => false,
-            'url' => null,
-            'error' => 'Tipus d\'arxiu no permès. Només es permeten: JPG, JPEG, PNG, GIF.'
-        ];
+    if (!in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+        return ['success' => false, 'url' => null, 'error' => 'Tipus d\'arxiu no permès. Només es permeten: JPG, JPEG, PNG, GIF.'];
     }
 
-    $maxFileSize = 2 * 1024 * 1024; // 2MB
-    if ($fileSize > $maxFileSize) {
-        return [
-            'success' => false,
-            'url' => null,
-            'error' => 'La imatge és massa gran. La mida màxima és 2 MB.'
-        ];
+    if ($file['size'] > 2 * 1024 * 1024) {
+        return ['success' => false, 'url' => null, 'error' => 'La imatge és massa gran. La mida màxima és 2 MB.'];
     }
 
-    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
-    $destPath = $uploadDir . $newFileName;
-
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+    $url = uploadToCloudinary($file['tmp_name']);
+    if (!$url) {
+        return ['success' => false, 'url' => null, 'error' => 'Error en pujar la imatge al servidor.'];
     }
 
-    if (move_uploaded_file($fileTmpPath, $destPath)) {
-        $url = 'images/' . $newFileName;
-        return ['success' => true, 'url' => $url];
-    } else {
-        return [
-            'success' => false,
-            'url' => null,
-            'error' => 'Error en pujar la imatge al servidor.'
-        ];
-    }
+    return ['success' => true, 'url' => $url];
 }
 
 ?>
