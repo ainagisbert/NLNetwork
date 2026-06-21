@@ -1,4 +1,3 @@
-<!-- Perfil de l'usuari de la sessió on pot gestionar les seves publicacions -->
 <?php
 session_start();
 

@@ -1,4 +1,3 @@
-<!-- Visualitzador de publicacions d'un usuari (mitjançant GET) -->
 <?php
 session_start();
 

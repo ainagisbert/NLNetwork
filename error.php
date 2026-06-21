@@ -1,4 +1,3 @@
-<!-- Plana per a la gestió dels errors via variables de SESSIÓ que inclouen un número i una descripció -->
 <?php
 session_start();
 
