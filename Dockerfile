@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.4-apache
 
 # Habilitar extensión de MySQL (mysqli y pdo_mysql)
 RUN docker-php-ext-install mysqli pdo_mysql
@@ -10,6 +10,6 @@ COPY . /var/www/html/
 # Configuramos Apache para escuchar en el puerto que Railway indique
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
 
-EXPOSE 80
+EXPOSE ${PORT}
 
 CMD ["sh", "-c", "apache2-foreground"]
