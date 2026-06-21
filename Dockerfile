@@ -1,18 +1,21 @@
 FROM php:8.4-apache
 
-# Instalar extensión mysqli
-RUN docker-php-ext-install mysqli pdo_mysql
+# Instalar extensiones mysqli
+RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 
-# Habilitar mod_rewrite (útil para URLs limpias)
-RUN a2enmod rewrite
+# Deshabilitar MPMs conflictivos y habilitar solo prefork
+RUN a2dismod mpm_event mpm_worker && \
+    a2enmod mpm_prefork rewrite
 
-# Copiar tu código
-COPY . /var/www/html/
-
-# Dar permisos
-RUN chown -R www-data:www-data /var/www/html
-
-# Configurar Apache para permitir .htaccess (opcional)
+# Configurar Apache para permitir .htaccess
 RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
+# Copiar archivos al directorio web
+COPY . /var/www/html/
+
+# Establecer permisos
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
+
+# Exponer puerto 80
 EXPOSE 80
