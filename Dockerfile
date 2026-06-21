@@ -1,14 +1,18 @@
 FROM php:8.4-apache
 
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.conf \
-          /etc/apache2/mods-enabled/mpm_event.load \
-          /etc/apache2/mods-enabled/mpm_worker.conf \
-          /etc/apache2/mods-enabled/mpm_worker.load \
-    && ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
-    && ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load
+# Instalar extensión mysqli
+RUN docker-php-ext-install mysqli pdo_mysql
 
-RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+# Habilitar mod_rewrite (útil para URLs limpias)
+RUN a2enmod rewrite
 
+# Copiar tu código
 COPY . /var/www/html/
 
+# Dar permisos
 RUN chown -R www-data:www-data /var/www/html
+
+# Configurar Apache para permitir .htaccess (opcional)
+RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
+EXPOSE 80
