@@ -1,7 +1,13 @@
 FROM php:8.4-fpm
 
+# Instalar Nginx y extensiones
 RUN apt-get update && apt-get install -y nginx && \
     docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+
+# Configurar PHP-FPM para escuchar en puerto 9000
+RUN echo '[global]' > /usr/local/etc/php-fpm.d/zz-docker.conf && \
+    echo '[www]' >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
+    echo 'listen = 127.0.0.1:9000' >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Configurar Nginx
 RUN echo 'server { \
@@ -14,15 +20,18 @@ RUN echo 'server { \
     } \
     location ~ \.php$ { \
         include fastcgi_params; \
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock; \
+        fastcgi_pass 127.0.0.1:9000; \
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
     } \
 }' > /etc/nginx/sites-available/default
 
+# Copiar archivos
 COPY . /var/www/html/
 
+# Permisos
 RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
 
-CMD service php8.4-fpm start && nginx -g "daemon off;"
+# Script de inicio que ejecuta ambos procesos
+CMD php-fpm -D && nginx -g "daemon off;"
