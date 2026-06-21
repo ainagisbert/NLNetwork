@@ -1,10 +1,13 @@
-FROM dunglas/frankenphp:php8.4
+FROM php:8.4-apache
 
-# Instalar extensiones de PHP necesarias
-RUN install-php-extensions mysqli pdo_mysql
+RUN docker-php-ext-install mysqli
 
-# Copiar tu código PHP
-COPY . /app/public
+RUN find /etc/apache2/mods-enabled/ -name "mpm_*" -delete \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load
 
-# Exponer el puerto
+COPY . /var/www/html/
+
+RUN chown -R www-data:www-data /var/www/html
+
 EXPOSE 80
