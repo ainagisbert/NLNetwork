@@ -1,4 +1,4 @@
-<!-- Definició classe Usuari i tots els mètodes necessaris per gestionar-lo -->
+<!-- Definició classe Usuari amb els seus getters i mètodes necessaris perquè realitzi accions -->
 <?php
 
 require_once(__DIR__ . '/../DL/Database.php');
@@ -106,7 +106,6 @@ class Usuari {
         }
     }
 
-    // Afegeix nou post per aquest usuari
     public function addPost($id_categoria, $contingut, $url_imatge = null) {
         if (!isset($this->id)) {
             throw new Exception("No s'ha carregat cap usuari.");
@@ -115,7 +114,6 @@ class Usuari {
         return $db->addPost($this->id, $id_categoria, $contingut, $url_imatge);
     }
 
-    // Esborra un post només si pertany a aquest usuari
     public function deletePost($id_publicacio) {
         if (!isset($this->id)) {
             throw new Exception("No s'ha carregat cap usuari.");
@@ -171,7 +169,7 @@ class Usuari {
         return $db->deleteComment($id_comentari, $this->id);
     }
 
-    // ========== MÈTODES ESTÀTICS / DE CLASSE ==========
+    // ========== MÈTODES ESTÀTICS / DE CLASSE (útils si encarqa no tenim dades d'usuari) ==========
 
     // Registra nou usuari a la base de dades
     public static function addUser($nom, $alies, $email, $contrasenya) {
@@ -195,17 +193,11 @@ class Usuari {
         return $db->checkAlias($alias);
     }
 
-    // Comprovem que sigui la seva contrasenya
     public static function isValidPassword($identificador, $contrasenya) {
         $db = new Database();
         $hash = $db->getUserPassword($identificador);
         return ($hash && password_verify($contrasenya, $hash));
     }
-    
-    /* public static function getUserById($identificador) {
-        $db = new Database();
-        return $db->getUserById($identificador);
-    } */
 }
 
 ?>

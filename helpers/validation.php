@@ -9,17 +9,19 @@ use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\NoRFCWarningsValidation;
 use Egulias\EmailValidator\Validation\Extra\SpoofCheckValidation;
 
-// Funcions de sanejament
+// === Funcions de sanejament ===
 
+// Sanejar strings per treure els espais abans d'abans i després i fer alguns caràcters segurs i evitar injeccions de codi
 function sanitizeString($value) {
     return htmlspecialchars(trim((string) $value), ENT_QUOTES, 'UTF-8');
 }
 
+// Treiem els espais d'abans i després dels emails
 function sanitizeEmail($email) {
     return trim((string) $email, FILTER_SANITIZE_EMAIL);
 }
 
-// Funcions de validació
+// === Funcions de validació ===
 
 function validateName($name)
 {
@@ -31,6 +33,7 @@ function validateAlias($alias) {
     return (bool) preg_match('/^[A-Za-z0-9_.]{3,30}$/', $alias);
 }
 
+// Validació correu utilitzant el paquet EmailValidator, mirem els estàndards de correu i que el domini existeixi
 function validateEmailAddress($email)
 {
     $validator = new EmailValidator();
@@ -53,12 +56,12 @@ function validatePassword($password)
     return $length >= 8 && $hasLetters && $hasDigits && $hasSpecialChars;
 }
 
+// Aquesta funció valida tots els atributs d'un usuari
 function validateUserFields($nom, $alies, $email, $contrasenya = null, $isUpdate = false)
 {
     $errors = [];
 
     if (!validateName($nom)) {
-      
       $errors[] = 'El nom ha de tenir entre 2 i 50 caràcters.';
     }
 
@@ -100,7 +103,7 @@ function validateImage(?array $file, string $currentImageUrl, string $uploadDir 
         ];
     }
 
-    $maxFileSize = 2 * 1024 * 1024; // 2MB
+    $maxFileSize = 2 * 1024 * 1024; // Imatges de 2MB màxim
     if ($fileSize > $maxFileSize) {
         return [
             'success' => false,
@@ -129,12 +132,10 @@ function validateImage(?array $file, string $currentImageUrl, string $uploadDir 
 }
 
 function validateImageForPost(?array $file, string $uploadDir = '../images/') {
-    // Si no s'ha pujat cap imatge, retornem null
     if (!$file || !isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => true, 'url' => null];
     }
 
-    // Validació normal
     $fileTmpPath = $file['tmp_name'];
     $fileName = $file['name'];
     $fileSize = $file['size'];

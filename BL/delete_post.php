@@ -1,3 +1,4 @@
+<!-- Esborrar publicació i redirecció a l'última pàgina visitada -->
 <?php
 session_start();
 

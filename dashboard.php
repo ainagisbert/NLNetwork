@@ -1,3 +1,4 @@
+<!-- Perfil de l'usuari de la sessió on pot gestionar les seves publicacions -->
 <?php
 session_start();
 
@@ -11,6 +12,7 @@ if (!isset($_SESSION['id_usuari'])) {
 require_once('BL/Usuari.php');
 require_once('helpers/display.php');
 
+// Info usuari de la sessió i els seus posts
 $usuari = new Usuari($_SESSION["id_usuari"]);
 $isLogged = isset($_SESSION['id_usuari']);
 
@@ -75,14 +77,13 @@ $publicacions = count($posts);
     </div>
   </nav>
 
-  <!-- Offcanvas (desplegable lateral des de la dreta) -->
+  <!-- Offcanvas de mòbil (desplegable lateral des de la dreta) -->
   <div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="navbarOffcanvas" aria-labelledby="navbarOffcanvasLabel">
     <div class="offcanvas-header">
       <h5 class="offcanvas-title text-white" id="navbarOffcanvasLabel">Menú</h5>
       <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Tanca"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column align-items-end">
-      <!-- Barra de cerca (mòbil) -->
       <form class="d-flex w-100 mb-4" role="search" action="visor.php" method="GET">
         <input class="form-control form-control-sm" type="search" name="alies" placeholder="Cerca..." aria-label="Cerca continguts">
       </form>
@@ -126,12 +127,17 @@ $publicacions = count($posts);
       </div>
     </div>
     
-    <!-- Publicacions de l'usuari -->
+    <!-- Publicacions de l'usuari ordenats de més nou a més antic -->
     <div class="col-12 col-lg-9">
       <h4 class="mb-3">Les meves publicacions</h4>
       <?php if (!empty($posts)): ?>
         <?php $categoriaNoms = getCategoriaNoms(); ?>
         <?php foreach ($posts as $post): ?>
+          <?php
+          // Carreguem els comentaris del post
+          $post->loadComments(); 
+          $comentaris = $post->getComentaris();
+          ?>
           <div class="card shadow-sm bg-dark text-white text-card mb-2 position-relative">
             <div class="card-body">
               <div class="d-flex flex-start align-items-center">
@@ -153,41 +159,82 @@ $publicacions = count($posts);
               <?php endif; ?>
               <div class="d-flex justify-content-start gap-2 mb-1">
                 <?php
-                $hasLiked = false;
-                if ($isLogged) {
-                  $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
-                  $hasLiked = $usuariLoggejat->hasLikedPost($post->getIdPost());
-                  $btnClass = $hasLiked ? 'btn-warning' : 'btn-outline-warning';
-                  $disabled = '';
-                } else {
-                  $btnClass = 'btn-warning';
-                  $disabled = 'disabled';
-                }
+                $likeState = getLikeButtonState($isLogged, function() use ($post, $usuari) {
+                  return $usuari->hasLikedPost($post->getIdPost());
+                });
                 ?>
                 <form method="POST" action="BL/like_post.php" style="display:inline;">
                   <input type="hidden" name="id_publicacio" value="<?= (int)$post->getIdPost() ?>">
-                  <button type="submit" class="btn <?= $btnClass ?> btn-sm" <?= $disabled ?>>
+                  <button class="btn <?= $likeState['class'] ?> btn-sm" <?= $likeState['disabled'] ?>>
                     <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
                   </button>
                 </form>
-                <button class="btn btn-info btn-sm btn-comment" disabled>
-                  <i class="bi bi-chat"></i> <?= $post->getNumComentaris() ?>
+                <button class="btn btn-outline-info btn-sm btn-comment">
+                  <i class="bi bi-chat"></i> <?= (int)($post->getNumComentaris()) ?>
                 </button>
               </div>
               <small class="text-info">Categoria: <?= $categoriaNoms[$post->getCategoria()] ?></small>
+              
+              <!-- Secció comentaris sense formulari, la intenció és que només els pugui consultar -->
+              <div class="card-footer bg-dark my-3 border-0" style="display: none;">
+                <!-- Comentaris ordenats de més antic al més nou -->
+                <?php if(!empty($comentaris)): ?>
+                  <?php foreach ($comentaris as $comentari): ?>
+                    <div class="card shadow-lg bg-dark text-white text-card mb-0 mt-3" style="max-width: 100%;">
+                      <div class="card-body py-3 px-3">
+                        <?php
+                        // Info de l'autor del comentari
+                        $autorCom = new Usuari($comentari->getUser());
+                        $avatarCom = $autorCom->getAvatar();
+                        $aliesCom = $autorCom->getAlies();
+                        $esMeuCom = ($isLogged && $comentari->getUser() == (int)$_SESSION['id_usuari']);
+                        ?>
+                        <div class="d-flex align-items-start mb-1">
+                          <img class="rounded-circle shadow-1-strong me-2 comment-avatar" src="<?= $avatarCom ?>" alt="avatar">
+                          <div>
+                            <?php if ($esMeuCom): ?>
+                              <div class="d-flex align-items-center">
+                                <h6 class="fw-bold text-warning mb-0 me-1">@<?= $aliesCom ?></h6>
+                                <span class="text-info small">(Tu)</span>
+                                <button type="button" class="btn btn-sm text-info mb-0" data-bs-toggle="modal" data-bs-target="#deleteCommentModal" data-id="<?= $comentari->getIdCom() ?>">
+                                  <i class="bi bi-trash text-danger"></i>
+                                </button>
+                              </div>
+                            <?php else: ?>
+                              <h6 class="fw-bold text-warning fs-6">@<a href="visor.php?alies=<?= urlencode($aliesCom) ?>" class="link-warning link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover"><?= $aliesCom ?></a></h6>
+                            <?php endif; ?>
+                            <p class="text-info small mb-0"><?= formatDateCa($comentari->getData()) ?></p>
+                          </div>
+                        </div>
+                        <p class="mt-3 mb-3"><?= $comentari->getContingut() ?></p>
+                        <div class="d-flex justify-content-start gap-2 mt-1">
+                          <?php
+                          // Comprovem si l'usuari logguejat li ha donat like i li donem forma al botó en conseqüència
+                          $likeStateCom = getLikeButtonState($isLogged, function() use ($comentari, $usuari) {
+                            return $usuari->hasLikedComentari($comentari->getIdCom());
+                          });
+                          ?>
+                          <form method="POST" action="BL/like_comment.php" style="display:inline;">
+                            <input type="hidden" name="id_comentari" value="<?= (int)$comentari->getIdCom() ?>">
+                            <button class="btn <?= $likeStateCom['class'] ?> btn-sm p-1 px-2" <?= $likeStateCom['disabled'] ?>> 
+                              <i class="bi bi-hand-thumbs-up"></i> <?= $comentari->getLikes() ?>
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <div class="text-center text-info mt-4"><i class="bi bi-inbox"></i> No hi ha cap comentari.</div>
+                <?php endif; ?>
+              </div>    
             </div>
           </div>
         <?php endforeach; ?>
-          <div class="text-center text-muted mt-4">
-            <i class="bi bi-inbox"></i> No hi ha més publicacions.
-          </div>
-          <?php else: ?>
-            <div class="text-center text-muted mt-4">
-              <i class="bi bi-inbox"></i> No tens cap publicació.
-            </div>
-          <?php endif; ?>
-        </div>
-      </div>
+          <div class="text-center text-muted mt-4"><i class="bi bi-inbox"></i> No hi ha més publicacions.</div>
+      <?php else: ?>
+        <div class="text-center text-muted mt-4"><i class="bi bi-inbox"></i> No tens cap publicació.</div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -218,9 +265,7 @@ $publicacions = count($posts);
                 <option value="3">Pensaments</option>
                 <option value="4">Altres</option>
               </select>
-              <div class="invalid-feedback">
-                Has de seleccionar una categoria.
-              </div>
+              <div class="invalid-feedback">Has de seleccionar una categoria.</div>
             </div>
             <div class="mb-3">
               <label for="textImage" class="form-label">Afegir imatge (opcional)</label>
@@ -256,17 +301,13 @@ $publicacions = count($posts);
             <div class="mb-3">
               <label for="profileUsername" class="form-label">Nom d'usuari</label>
               <input type="text" class="form-control border-dark" id="profileUsername" name="alies" value="<?= $alies ?>" maxlength="30" required>
-              <div class="invalid-feedback">
-                El nom d'usuari és obligatori.
-              </div>
+              <div class="invalid-feedback">El nom d'usuari és obligatori.</div>
             </div>
 
             <div class="mb-3">
               <label for="profileName" class="form-label">Nom públic</label>
               <input type="text" class="form-control border-dark" id="profileName" name="nom" value="<?= $nom ?>" required>
-              <div class="invalid-feedback">
-                El nom públic és obligatori.
-              </div>
+              <div class="invalid-feedback">El nom públic és obligatori.</div>
             </div>
 
             <div class="mb-3">
@@ -352,6 +393,32 @@ $publicacions = count($posts);
     </div>
   </div>
 
+  <!-- Modal Esborrar Comentari -->
+  <div class="modal fade" id="deleteCommentModal" tabindex="-1" aria-labelledby="deleteCommentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteCommentModalLabel">Esborrar comentari</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tanca"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-1">Estàs segura que vols esborrar aquest comentari?</p>
+          <small class="text-muted">Aquesta acció no es pot desfer.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel·lar</button>
+          <form action="BL/delete_comment.php" method="POST" style="display:inline;">
+            <input type="hidden" name="action" value="deleteComment">
+            <input type="hidden" name="id_comentari" id="deleteCommentId">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Esborra
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Alerta de perfil actualitzat -->
   <?php if (isset($_GET['updated']) && $_GET['updated'] == 'true'): ?>
   <div id="profileSavedAlert" class="alert alert-success alert-dismissible fade show fixed-top w-75 mx-auto mt-3" role="alert" style="z-index: 1050;">
@@ -381,6 +448,16 @@ $publicacions = count($posts);
       updateCounter();
       textarea.addEventListener('input', updateCounter);
     });
+
+    // Mostrar/ocultar comentaris
+    document.querySelectorAll('.btn-comment').forEach(button => {
+      button.addEventListener('click', function () {
+        const card = this.closest('.card');
+        const footer = card.querySelector('.card-footer');
+        footer.style.display = footer.style.display === 'none' || footer.style.display === '' ? 'block' : 'none';
+      });
+    });
+
     // Validació Bootstrap
     (() => {
       'use strict';
@@ -396,7 +473,7 @@ $publicacions = count($posts);
       });
     })();
 
-    // Auto-dismiss alert if present
+    // Dismiss alerta perfil actualitzat
     const alert = document.getElementById('profileSavedAlert');
     if (alert) {
       setTimeout(() => {
@@ -407,7 +484,7 @@ $publicacions = count($posts);
       }, 3000);
     }
 
-    // Passar ID publicació
+    // Passar ID publicació i comentari
     const deletePostModal = document.getElementById('deletePostModal');
     deletePostModal.addEventListener('show.bs.modal', function (event) {
       const button = event.relatedTarget;
@@ -416,7 +493,14 @@ $publicacions = count($posts);
       document.getElementById('deletePostId').value = postId;
     });
 
-    // Funció reutilitzable per alternar visibilitat
+    const deleteCommentModal = document.getElementById('deleteCommentModal');
+    deleteCommentModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const commentId = button.getAttribute('data-id');
+        document.getElementById('deleteCommentId').value = commentId;
+    });
+
+    // Funció reutilitzable per alternar visibilitat contrasenya
     function setupPasswordToggle(toggleButtonId, inputId) {
       const toggleBtn = document.querySelector(`#${toggleButtonId}`);
       const input = document.querySelector(`#${inputId}`);

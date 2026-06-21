@@ -1,4 +1,4 @@
-<!-- Visualitzador de publicacions d'un usuari -->
+<!-- Visualitzador de publicacions d'un usuari (mitjançant GET) -->
 <?php
 session_start();
 
@@ -13,8 +13,12 @@ if (!isset($_GET['alies']) || empty(trim($_GET['alies']))) {
 }
 
 $aliesBuscat = trim($_GET['alies']);
-$usuari = new Usuari($aliesBuscat);
+$usuari = new Usuari($aliesBuscat); // Usuari buscat
+$usuariLogged = null; 
 $isLogged = isset($_SESSION['id_usuari']);
+if ($isLogged) {
+  $usuariLogged = new Usuari($_SESSION['id_usuari']); // Usuari de la sessió
+}
 
 if (!$usuari->getId()) {
     $_SESSION['errorNumber'] = 11;
@@ -23,9 +27,9 @@ if (!$usuari->getId()) {
     exit;
 }
 
+// Carreguem els posts de l'usuari buscat i guardem la seva info
 $usuari->loadPosts();
 $posts = $usuari->getPosts();
-
 $avatar = $usuari->getAvatar();
 $alies = $usuari->getAlies();
 $nom = $usuari->getNom();
@@ -65,7 +69,7 @@ $publicacions = count($posts);
         <form class="d-flex me-3" role="search" action="visor.php" method="GET" style="max-width: 280px;">
           <input class="form-control form-control-sm" type="search" name="alies" placeholder="Cerca..." aria-label="Cerca continguts">
         </form>
-        <!-- Menú de navegació -->
+        <!-- Menú de navegació que canvi si hi ha un usuari en sessió o no -->
         <ul class="navbar-nav align-items-center gap-2">
           <?php if ($isLogged): ?>
             <li class="nav-item">
@@ -94,7 +98,7 @@ $publicacions = count($posts);
     </div>
   </nav>
 
-  <!-- Offcanvas (desplegable lateral des de la dreta) -->
+  <!-- Offcanvas (desplegable lateral des de la dreta per mòbil) -->
   <div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="navbarOffcanvas" aria-labelledby="navbarOffcanvasLabel">
     <div class="offcanvas-header">
       <h5 class="offcanvas-title text-white" id="navbarOffcanvasLabel">Menú</h5>
@@ -105,6 +109,7 @@ $publicacions = count($posts);
       <form class="d-flex w-100 mb-4" role="search" action="visor.php" method="GET">
         <input class="form-control form-control-sm" type="search" name="alies" placeholder="Cerca..." aria-label="Cerca continguts">
       </form>
+      <!-- Menú de navegació que canvi si hi ha un usuari en sessió o no -->
       <?php if ($isLogged): ?>
         <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#createTextModal">
           <i class="bi bi-bookmark-plus"></i> Crear Text
@@ -157,10 +162,10 @@ $publicacions = count($posts);
           </div>
         </div>
       </div>
-      <!-- Publicacions de l'usuari -->
+
+      <!-- Publicacions de l'usuari del més nou al més antic -->
       <div class="col-12 col-lg-9">
         <h4 class="mb-3">Publicacions de @<?= $alies ?></h4>
-
         <?php if (!empty($posts)): ?>
           <?php $categoriaNoms = getCategoriaNoms(); ?>
           <?php foreach ($posts as $post): ?>
@@ -181,20 +186,13 @@ $publicacions = count($posts);
                 <?php endif; ?>
                 <div class="d-flex justify-content-start gap-2 mb-1">
                   <?php
-                  $hasLiked = false;
-                  if ($isLogged) {
-                    $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
-                    $hasLiked = $usuariLoggejat->hasLikedPost($post->getIdPost());
-                    $btnClass = $hasLiked ? 'btn-warning' : 'btn-outline-warning';
-                    $disabled = '';
-                  } else {
-                    $btnClass = 'btn-warning';
-                    $disabled = 'disabled';
-                  }
+                  $likeState = getLikeButtonState($isLogged, function() use ($post, $usuariLogged) {
+                    return $usuariLogged->hasLikedPost($post->getIdPost());
+                  });
                   ?>
                   <form method="POST" action="BL/like_post.php" style="display:inline;">
                     <input type="hidden" name="id_publicacio" value="<?= (int)$post->getIdPost() ?>">
-                    <button type="submit" class="btn <?= $btnClass ?> btn-sm" <?= $disabled ?>>
+                    <button class="btn <?= $likeState['class'] ?> btn-sm" <?= $likeState['disabled'] ?>>
                       <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
                     </button>
                   </form>

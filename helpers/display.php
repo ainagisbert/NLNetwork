@@ -1,5 +1,5 @@
+<!-- Funcions reutilitzables reutilitzables per formatar dades i generar elements visuals a les vistes -->
 <?php
-
 // Mapeig global de categories (fixes)
 function getCategoriaNoms() {
     return [
@@ -28,4 +28,22 @@ function formatDateCa($dateString) {
     $any = date('Y', $timestamp);
     
     return "$dia $mes, $any";
+}
+
+// Dona forma al botó quan té like (ple) i quan no (buit)
+function getLikeButtonState($isLogged, $checkLikedCallback = null) {
+    if (!$isLogged) {
+        return [
+            'class' => 'btn-warning',
+            'disabled' => 'disabled'
+        ];
+    }
+
+    $hasLiked = $checkLikedCallback && $checkLikedCallback();
+    $class = $hasLiked ? 'btn-warning' : 'btn-outline-warning';
+    
+    return [
+        'class' => $class,
+        'disabled' => ''
+    ];
 }

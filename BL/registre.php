@@ -1,3 +1,4 @@
+<!-- Registre nou usuari i enviament correu de benvinguda -->
 <?php
 
 session_start();
@@ -44,14 +45,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    if (Usuari::existsEmail($email)) {
+    if (Usuari::existsEmail($email)) { // Ha de ser únic
         $_SESSION["errorNumber"] = 2;
         $_SESSION["errorMsg"] = "Aquest correu electrònic ja està registrat.";
         header("Location: ../error.php");
         exit;
     }
 
-    if (Usuari::existsAlias($alies)) {
+    if (Usuari::existsAlias($alies)) { // Ha de ser únic
         $_SESSION["errorNumber"] = 2;
         $_SESSION["errorMsg"] = "Aquest àlies ja està en ús.";
         header("Location: ../error.php");

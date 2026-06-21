@@ -1,4 +1,4 @@
-<!-- Definició classe Comentari -->
+<!-- Definició classe Comentari amb els seus getters -->
 <?php
 
 require_once(__DIR__ . '/../DL/Database.php');
@@ -23,7 +23,7 @@ class Comentari {
     public function getIdCom() { return $this->id_comentari; }
     public function getContingut() { return $this->contingut; }
     public function getData() { return $this->data; }
-    public function getLikes() {
+    public function getLikes() { // Fem el càlcul amb els mètodes de la BD
         $db = new Database();
         return $db->countLikesComentari($this->id_comentari);
     }

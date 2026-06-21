@@ -5,11 +5,20 @@ require_once('BL/Post.php');
 require_once('BL/Usuari.php');
 require_once('helpers/display.php');
 
+// Obtenim tots els posts de la BD
 $totsPosts = Post::getAll();
 
 $categoriaNoms = getCategoriaNoms();
-$isLogged = isset($_SESSION['id_usuari']);
 
+// Info de l'usuari en sessió
+$usuariLogged = null;
+$isLogged = isset($_SESSION['id_usuari']);
+if ($isLogged) {
+  $usuariLogged = new Usuari($_SESSION['id_usuari']);
+  $avatarLogged = $usuariLogged->getAvatar();
+}
+
+// Variables per mostrar les publicacions agrupades per categoria
 $categoriaOrdre = [1, 2, 3, 4];
 $categoriaIds = [
     1 => 'haikus',
@@ -59,7 +68,7 @@ foreach ($totsPosts as $post) {
         <form class="d-flex me-3" role="search" action="visor.php" method="GET" style="max-width: 280px;">
           <input class="form-control form-control-sm" type="search" name="alies" placeholder="Cerca..." aria-label="Cerca continguts">
         </form>
-        <!-- Menú de navegació -->
+        <!-- Menú de navegació que canvia si hi ha un usuari en sessió o no -->
         <ul class="navbar-nav align-items-center gap-2">
           <?php if ($isLogged): ?>
             <li class="nav-item">
@@ -88,14 +97,13 @@ foreach ($totsPosts as $post) {
     </div>
   </nav>
 
-  <!-- Offcanvas (desplegable lateral des de la dreta) -->
+  <!-- Offcanvas de mòbil (desplegable lateral des de la dreta) -->
   <div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="navbarOffcanvas" aria-labelledby="navbarOffcanvasLabel">
     <div class="offcanvas-header">
       <h5 class="offcanvas-title text-white" id="navbarOffcanvasLabel">Menú</h5>
       <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Tanca"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column align-items-end">
-      <!-- Barra de cerca (mòbil) -->
       <form class="d-flex w-100 mb-4" role="search" action="visor.php" method="GET">
         <input class="form-control form-control-sm" type="search" name="alies" placeholder="Cerca..." aria-label="Cerca continguts">
       </form>
@@ -123,7 +131,7 @@ foreach ($totsPosts as $post) {
   <!-- Contingut principal -->
   <div class="container mt-4">
     <div class="row">
-      <!-- Sidebar lateral -->
+      <!-- Sidebar lateral amb les categories -->
       <div class="col-12 col-lg-3 mb-2">
         <div class="nav flex-row flex-lg-column nav-pills gap-2 sidebar-nav" id="v-pills-tab" role="tablist" aria-orientation="vertical">
           <?php foreach ($categoriaOrdre as $index => $catId): ?>
@@ -142,7 +150,7 @@ foreach ($totsPosts as $post) {
         </div>
       </div>
 
-      <!-- Posts -->
+      <!-- Posts ordenats de més nou a més antic segons categoria -->
       <div class="col-12 col-lg-9">
         <div class="tab-content" id="v-pills-tabContent">
           <?php foreach ($categoriaOrdre as $index => $catId): ?>
@@ -154,7 +162,7 @@ foreach ($totsPosts as $post) {
                   $autor = new Usuari($post->getUser());
                   $avatar = $autor->getAvatar();
                   $alies = $autor->getAlies();
-                  $esMeuPost = ($isLogged && $post->getUser() == (int)$_SESSION['id_usuari']);
+                  $esMeuPost = ($isLogged && $post->getUser() == (int)$_SESSION['id_usuari']); // Si és teu el link de l'àlies redirigeix al dashboard i apareix l'opció d'esborrar-lo
                   $post->loadComments();
                   $comentaris = $post->getComentaris();
                   ?>
@@ -183,20 +191,13 @@ foreach ($totsPosts as $post) {
                       <?php endif; ?>
                       <div class="d-flex justify-content-start gap-2 mb-1">
                         <?php
-                        $hasLiked = false;
-                        if ($isLogged) {
-                            $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
-                            $hasLiked = $usuariLoggejat->hasLikedPost($post->getIdPost());
-                            $btnClass = $hasLiked ? 'btn-warning' : 'btn-outline-warning';
-                            $disabled = '';
-                        } else {
-                          $btnClass = 'btn-warning';
-                          $disabled = 'disabled';
-                        }
+                        $likeState = getLikeButtonState($isLogged, function() use ($post, $usuariLogged) {
+                          return $usuariLogged->hasLikedPost($post->getIdPost());
+                        });
                         ?>
                         <form method="POST" action="BL/like_post.php" style="display:inline;">
                           <input type="hidden" name="id_publicacio" value="<?= (int)$post->getIdPost() ?>">
-                          <button type="submit" class="btn <?= $btnClass ?> btn-sm" <?= $disabled ?>>
+                          <button class="btn <?= $likeState['class'] ?> btn-sm" <?= $likeState['disabled'] ?>>
                             <i class="bi bi-hand-thumbs-up"></i> <?= $post->getLikes() ?>
                           </button>
                         </form>
@@ -207,12 +208,9 @@ foreach ($totsPosts as $post) {
                       <small class="text-info">Categoria: <?= $categoriaNoms[$post->getCategoria()] ?></small>
 
                       <!-- Secció comentaris (inicialment oculta) -->
+                      <!-- Formulari per comentar -->
                       <div class="card-footer bg-dark my-3 border-0" style="display: none;">
                         <?php if ($isLogged): ?>
-                          <?php
-                          $usuariLogged = new Usuari($_SESSION['id_usuari']);
-                          $avatarLogged = $usuariLogged->getAvatar();
-                          ?>
                           <form class="needs-validation comment-form" method = "post" action = "BL/comment.php" novalidate>
                             <input type="hidden" name="idPost" value="<?= (int)$post->getIdPost() ?>">
                             <div class="d-flex flex-start w-100">
@@ -231,7 +229,7 @@ foreach ($totsPosts as $post) {
                             <div class="clearfix"></div>
                           </form>
                         <?php endif; ?>
-                        <!-- Exemple comentari -->
+                        <!-- Comentaris ordenats de més antic al més nou -->
                         <?php if(!empty($comentaris)): ?>
                           <?php foreach ($comentaris as $comentari): ?>
                             <div class="card shadow-lg bg-dark text-white text-card mb-0 mt-3" style="max-width: 100%;">
@@ -240,7 +238,7 @@ foreach ($totsPosts as $post) {
                                 $autorCom = new Usuari($comentari->getUser());
                                 $avatarCom = $autorCom->getAvatar();
                                 $aliesCom = $autorCom->getAlies();
-                                $esMeuCom = ($isLogged && $comentari->getUser() == (int)$_SESSION['id_usuari']);
+                                $esMeuCom = ($isLogged && $comentari->getUser() == (int)$_SESSION['id_usuari']); // Si és teu el link de l'àlies redirigeix al dashboard i apareix l'opció d'esborrar-lo
                                 ?>
                                 <div class="d-flex align-items-start mb-1">
                                   <img class="rounded-circle shadow-1-strong me-2 comment-avatar" src="<?= $avatarCom ?>" alt="avatar">
@@ -262,20 +260,13 @@ foreach ($totsPosts as $post) {
                                 <p class="mt-3 mb-3"><?= $comentari->getContingut() ?></p>
                                 <div class="d-flex justify-content-start gap-2 mt-1">
                                   <?php
-                                  $hasLikedCom = false;
-                                  if ($isLogged) {
-                                      $usuariLoggejat = new Usuari($_SESSION['id_usuari']);
-                                      $hasLikedCom = $usuariLoggejat->hasLikedComentari($comentari->getIdCom());
-                                      $btnClassCom = $hasLikedCom ? 'btn-warning' : 'btn-outline-warning';
-                                      $disabledCom = '';
-                                  } else {
-                                    $btnClassCom = 'btn-warning';
-                                    $disabledCom = 'disabled';
-                                  }
+                                  $likeStateCom = getLikeButtonState($isLogged, function() use ($comentari, $usuariLogged) {
+                                    return $usuariLogged->hasLikedComentari($comentari->getIdCom());
+                                  });
                                   ?>
                                   <form method="POST" action="BL/like_comment.php" style="display:inline;">
                                     <input type="hidden" name="id_comentari" value="<?= (int)$comentari->getIdCom() ?>">
-                                    <button type="submit" class="btn <?= $btnClassCom ?> btn-sm p-1 px-2" <?= $disabledCom ?>> 
+                                    <button class="btn <?= $likeStateCom['class'] ?> btn-sm p-1 px-2" <?= $likeStateCom['disabled'] ?>> 
                                       <i class="bi bi-hand-thumbs-up"></i> <?= $comentari->getLikes() ?>
                                     </button>
                                   </form>
@@ -406,7 +397,6 @@ foreach ($totsPosts as $post) {
   <script>
     // Limitar caràcters del textarea principal  
     document.querySelectorAll('.char-counter').forEach(textarea => {
-      // Troba l'element de recompte associat (el següent element .form-text o similar)
       const counter = textarea.nextElementSibling?.classList.contains('form-text') 
         ? textarea.nextElementSibling 
         : textarea.parentElement.querySelector('.form-text');
@@ -420,12 +410,9 @@ foreach ($totsPosts as $post) {
         }
       };
 
-    // Inicialitza el recompte
-    updateCounter();
-
-    // Escolta els canvis
-    textarea.addEventListener('input', updateCounter);
-  });
+      updateCounter();
+      textarea.addEventListener('input', updateCounter);
+    });
 
     // Mostrar/ocultar comentaris
     document.querySelectorAll('.btn-comment').forEach(button => {
@@ -451,6 +438,7 @@ foreach ($totsPosts as $post) {
       });
     })();
 
+    // Passar el id del post o comentari a esborrar
     const deletePostModal = document.getElementById('deletePostModal');
     deletePostModal.addEventListener('show.bs.modal', function (event) {
       const button = event.relatedTarget;

@@ -9,13 +9,15 @@ class Database {
     private $conn;
 
     public function __construct() {
-        $this->conn = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
+        $this->conn = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME, PORT);
         if ($this->conn->connect_error) {
           die("Connexió fallida: " . $this->conn->connect_error);
       }
       $this->conn->set_charset("utf8");
     }
 
+    // COMANDES PER GESTIONAR L'USUARI: donar d'alta, esborrar, actualitzar, fer comprovacions i obtenir totes les seves dades
+    
     public function addUser($nom, $alies, $email, $contrasenya, $url_imatge, $descripcio) {
         $sql = "INSERT INTO usuari (nom, alies, email, contrasenya, url_imatge, descripcio)
                 VALUES ('$nom', '$alies', '$email', '$contrasenya', '$url_imatge', '$descripcio')";
@@ -77,6 +79,8 @@ class Database {
       return ($result && $row = $result->fetch_assoc()) ? (int)$row['total'] : 0;
     }
 
+    // COMANDES PER GESTIONAR POSTS: publicar un nou, esborrar-lo, obtenir la seva informació i obtenir tots els de la BD
+
     public function addPost($id_usuari, $id_categoria, $contingut, $url_imatge = '') {
       $sql = "INSERT INTO publicacio (contingut, `data`, url_imatge, id_usuari, id_categoria)
               VALUES ('$contingut', NOW(), '$url_imatge', '$id_usuari', '$id_categoria')";
@@ -129,6 +133,8 @@ class Database {
       return $posts;
     }
 
+    // COMANDES PER GESTIONAR COMENTARIS: publicar un nou, esborrar-lo, obtenir la seva informació i retornar tots els comentaris d'un post
+
     public function addComment($id_usuari, $id_publicacio, $contingut) {
         $sql = "INSERT INTO comentari (contingut, data, id_usuari, id_publicacio)
                 VALUES ('$contingut', NOW(), '$id_usuari', '$id_publicacio')";
@@ -162,6 +168,8 @@ class Database {
       return ($result && $row = $result->fetch_assoc()) ? (int)$row['total'] : 0;
     }
 
+    // Funcions gestionar els likes, si l'usuari té like, el treu, si no en té, l'afegeix
+
     public function toggleLikePost($id_publicacio, $id_usuari) {
       $check = "SELECT 1 FROM likes_post WHERE id_publicacio = '$id_publicacio' AND id_usuari = '$id_usuari'";
       $result = $this->conn->query($check);
@@ -185,6 +193,8 @@ class Database {
       }
       return $this->conn->query($sql);
     }
+
+    // Comprovacions si un usuari ha fet like a una publicació o comentari
 
     public function userHasLikedPost($id_publicacio, $id_usuari) {
       $sql = "SELECT 1 FROM likes_post WHERE id_publicacio = '$id_publicacio' AND id_usuari = '$id_usuari'";

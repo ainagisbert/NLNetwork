@@ -1,3 +1,4 @@
+<!-- Esborrar usuari i redirigim a la plana de login destruint la sessió -->
 <?php
 session_start();
 

@@ -1,4 +1,4 @@
-<!-- Definició classe Post -->
+<!-- Definició classe Post amb els seus getters i una funció per carregar tots els seus comentaris -->
 <?php
 
 require_once(__DIR__ . '/../DL/Database.php');

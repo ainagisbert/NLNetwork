@@ -38,7 +38,6 @@ if (isset($_SESSION['errorNumber']) && $_SESSION['errorNumber'] !== 0) {
             </a>
         </div>
     </nav>
-
     <main class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-9 col-lg-6">
@@ -48,7 +47,6 @@ if (isset($_SESSION['errorNumber']) && $_SESSION['errorNumber'] !== 0) {
                             <i class="bi bi-exclamation-triangle" style="font-size: 4rem;"></i>
                         </div>
                         <h1 class="h3 mb-3">Hi ha hagut un problema</h1>
-
                         <?php if ($errorNumber !== null): ?>
                             <p class="lead mb-1">Error número <strong><?= htmlspecialchars($errorNumber) ?></strong></p>
                         <?php endif; ?>
@@ -56,7 +54,6 @@ if (isset($_SESSION['errorNumber']) && $_SESSION['errorNumber'] !== 0) {
                         <?php foreach ($errorMessages as $msg): ?>
                             <p class="mb-2"><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></p>
                         <?php endforeach; ?>
-
                         <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center mt-4">
                             <a class="btn btn-primary" href="home.php">
                                 <i class="bi bi-house-door"></i> Torna a l'inici
@@ -71,7 +68,5 @@ if (isset($_SESSION['errorNumber']) && $_SESSION['errorNumber'] !== 0) {
             </div>
         </div>
     </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

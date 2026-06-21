@@ -1,3 +1,4 @@
+<!-- Esborrar comentari i redirecció a l'última pàgina visitada -->
 <?php
 session_start();
 
@@ -15,7 +16,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
     if ($usuari->deleteComment($id_comentari)) {
         $_SESSION["errorNumber"] = 0;
-        header("Location: ../home.php");
+        $referrer = $_SERVER['HTTP_REFERER'] ?? '../dashboard.php';
+        header("Location: $referrer");
         exit;
     } else {
         $_SESSION["errorNumber"] = 15;
