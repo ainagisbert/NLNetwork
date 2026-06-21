@@ -15,6 +15,7 @@ RUN echo 'server { \
     server_name _; \
     root /var/www/html; \
     index index.php index.html; \
+    client_max_body_size 4M; \
     location / { \
         try_files $uri $uri/ /index.php?$query_string; \
     } \
