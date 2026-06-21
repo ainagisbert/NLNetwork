@@ -25,6 +25,10 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/sites-available/default
 
+# Crear script de inicio
+RUN echo '#!/bin/bash\nphp-fpm -D\nnginx -g "daemon off;"' > /start.sh && \
+    chmod +x /start.sh
+
 # Copiar archivos
 COPY . /var/www/html/
 
@@ -33,5 +37,5 @@ RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
 
-# Script de inicio que ejecuta ambos procesos
-CMD php-fpm -D && nginx -g "daemon off;"
+# Usar sintaxis JSON para CMD
+CMD ["/start.sh"]
