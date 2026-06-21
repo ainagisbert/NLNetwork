@@ -3,8 +3,8 @@
 
 define("SERVERNAME" , "reseau.proxy.rlwy.net");
 define("USERNAME" , "root");
-define("PASSWORD", "DbIWiFsNBNrprcCouNoRPzmuSlEtxOVP");
+define("PASSWORD", "GfkhdVSlQtSlUEHWUEljcxHJFoGzpbss");
 define("DBNAME", "railway");
-define("PORT", 19403);
+define("PORT", 40768);
 
 ?>
